@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Perfil - Notícias{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Seu Perfil</h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        {% if user.profile.profile_image %}
+                            <img src="{{ user.profile.profile_image.url }}" alt="Foto de perfil" class="rounded-circle img-fluid" style="max-width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'img/user-default.png' %}" alt="Foto de perfil" class="rounded-circle img-fluid" style="max-width: 150px;">
+                        {% endif %}
+                    </div>
+                    <h4 class="text-center">{{ user.username }}</h4>
+                    <p class="text-center text-muted">{{ user.email }}</p>
+                    {% if user.profile.bio %}
+                        <p class="text-center">{{ user.profile.bio }}</p>
+                    {% endif %}
+                    <hr>
+                    <form method="post" enctype="multipart/form-data" class="mb-3">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">Nome</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">Sobrenome</label>
+                            {{ form.last_name }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.bio.id_for_label }}" class="form-label">Biografia</label>
+                            {{ form.bio }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.profile_image.id_for_label }}" class="form-label">Foto de Perfil</label>
+                            {{ form.profile_image }}
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        </div>
+                    </form>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-primary">Alterar Senha</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Suas Atividades</h3>
+                </div>
+                <div class="card-body">
+                    <h4>Comentários Recentes</h4>
+                    {% if user_comments %}
+                        <ul class="list-group mb-4">
+                            {% for comment in user_comments %}
+                                <li class="list-group-item">
+                                    <p class="mb-1"><strong>Em:</strong> <a href="{{ comment.news.get_absolute_url }}">{{ comment.news.title }}</a></p>
+                                    <p class="mb-1">{{ comment.content|truncatechars:100 }}</p>
+                                    <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Você ainda não fez nenhum comentário.
+                        </div>
+                    {% endif %}
+                    
+                    <h4>Notícias Favoritas</h4>
+                    {% if favorite_news %}
+                        <div class="row">
+                            {% for news in favorite_news %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100">
+                                        {% if news.featured_image %}
+                                            <img src="{{ news.featured_image.url }}" class="card-img-top" alt="{{ news.title }}">
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ news.title }}</h5>
+                                            <p class="card-text">{{ news.content|striptags|truncatechars:100 }}</p>
+                                            <a href="{{ news.get_absolute_url }}" class="btn btn-sm btn-primary">Ler mais</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Você ainda não tem notícias favoritas.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

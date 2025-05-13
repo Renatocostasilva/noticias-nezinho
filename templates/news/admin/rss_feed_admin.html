@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gerenciar Feeds RSS - Notícias{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Painel de Administração</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'news:news_admin' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'news:news_create' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus me-2"></i> Nova Notícia
+                    </a>
+                    <a href="{% url 'news:partner_admin' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-md me-2"></i> Gerenciar Parceiros
+                    </a>
+                    <a href="{% url 'news:rss_feed_admin' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-rss me-2"></i> Gerenciar Feeds RSS
+                    </a>
+                    <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user me-2"></i> Meu Perfil
+                    </a>
+                    <a href="{% url 'accounts:logout' %}" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-rss me-2"></i> Gerenciar Feeds RSS</h5>
+                    <a href="{% url 'news:rss_feed_create' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-plus me-1"></i> Novo Feed
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="messages mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>URL</th>
+                                    <th>Categoria</th>
+                                    <th>Ordem</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feed in feeds %}
+                                <tr>
+                                    <td>
+                                        {% if feed.logo %}
+                                        <img src="{{ feed.logo.url }}" alt="{{ feed.name }}" width="30" height="30" class="rounded me-2">
+                                        {% else %}
+                                        <i class="fas fa-rss me-2 text-warning"></i>
+                                        {% endif %}
+                                        {{ feed.name }}
+                                    </td>
+                                    <td>
+                                        <a href="{{ feed.url }}" target="_blank" class="text-truncate d-inline-block" style="max-width: 200px;">
+                                            {{ feed.url }}
+                                        </a>
+                                    </td>
+                                    <td>{{ feed.category.name|default:"Sem categoria" }}</td>
+                                    <td>{{ feed.order }}</td>
+                                    <td>
+                                        {% if feed.active %}
+                                        <span class="badge bg-success">Ativo</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inativo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'news:rss_feed_update' feed.pk %}" class="btn btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'news:rss_feed_delete' feed.pk %}" class="btn btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-rss fa-3x mb-3"></i>
+                                            <p>Nenhum feed RSS cadastrado.</p>
+                                            <a href="{% url 'news:rss_feed_create' %}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-plus me-1"></i> Adicionar Feed RSS
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

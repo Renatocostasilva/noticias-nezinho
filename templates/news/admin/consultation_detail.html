@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Solicitação - Notícias{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Painel de Administração</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'news:news_admin' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'news:news_create' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus me-2"></i> Nova Notícia
+                    </a>
+                    <a href="{% url 'news:partner_admin' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-user-md me-2"></i> Parceiros
+                    </a>
+                    <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user me-2"></i> Meu Perfil
+                    </a>
+                    <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-key me-2"></i> Alterar Senha
+                    </a>
+                    <a href="{% url 'accounts:logout' %}" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Detalhes da Solicitação de Consulta</h5>
+                    <span class="badge {% if consultation.status == 'pending' %}bg-warning text-dark{% elif consultation.status == 'confirmed' %}bg-success{% else %}bg-danger{% endif %}">
+                        {% if consultation.status == 'pending' %}
+                            Pendente
+                        {% elif consultation.status == 'confirmed' %}
+                            Confirmada
+                        {% else %}
+                            Cancelada
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="messages mb-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">Informações do Solicitante</h6>
+                            <p><strong>Nome:</strong> {{ consultation.full_name }}</p>
+                            <p><strong>CPF:</strong> {{ consultation.cpf }}</p>
+                            <p><strong>Email:</strong> {{ consultation.email }}</p>
+                            <p><strong>Telefone:</strong> {{ consultation.phone }}</p>
+                            <p><strong>Endereço:</strong> {{ consultation.address }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">Informações da Consulta</h6>
+                            <p><strong>Parceiro:</strong> {{ consultation.partner.name }}</p>
+                            <p><strong>Data da Solicitação:</strong> {{ consultation.created_date|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Dias Preferidos:</strong> {{ consultation.preferred_days }}</p>
+                            <p><strong>Horários Preferidos:</strong> {{ consultation.preferred_times }}</p>
+                            <p><strong>Forma de Pagamento:</strong> {{ consultation.get_payment_method_display }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if consultation.notes %}
+                    <div class="mb-4">
+                        <h6 class="border-bottom pb-2 mb-3">Observações</h6>
+                        <p>{{ consultation.notes }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <h6 class="border-bottom pb-2 mb-3">Atualizar Status</h6>
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-8">
+                                <select name="status" class="form-select">
+                                    <option value="pending" {% if consultation.status == 'pending' %}selected{% endif %}>Pendente</option>
+                                    <option value="confirmed" {% if consultation.status == 'confirmed' %}selected{% endif %}>Confirmada</option>
+                                    <option value="cancelled" {% if consultation.status == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100">Atualizar Status</button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'news:partner_admin' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Voltar
+                        </a>
+                        <div class="btn-group">
+                            <a href="mailto:{{ consultation.email }}" class="btn btn-outline-info">
+                                <i class="fas fa-envelope me-1"></i> Enviar Email
+                            </a>
+                            <a href="tel:{{ consultation.phone }}" class="btn btn-outline-success">
+                                <i class="fas fa-phone me-1"></i> Ligar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

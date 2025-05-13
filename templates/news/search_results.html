@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+{% block title %}Resultados da Pesquisa: {{ query }} - Notícias{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <h1 class="news-title">Resultados da Pesquisa: "{{ query }}"</h1>
+            <p class="lead mt-3">{{ news_list.count }} resultado(s) encontrado(s)</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            {% for news in news_list %}
+            <div class="card mb-4">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        <img src="{{ news.featured_image.url }}" class="img-fluid rounded-start" alt="{{ news.title }}" style="height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <span class="badge" style="background-color: {{ news.category.color }};">{{ news.category.name }}</span>
+                            <h5 class="card-title mt-2 news-title">
+                                <a href="{{ news.get_absolute_url }}" class="text-decoration-none text-dark">{{ news.title }}</a>
+                            </h5>
+                            <p class="card-text">{{ news.summary|truncatechars:150 }}</p>
+                            <div class="d-flex justify-content-between align-items-center news-meta">
+                                <div>
+                                    <span><i class="far fa-user me-1"></i> {{ news.author.get_full_name|default:news.author.username }}</span>
+                                    <span class="ms-3"><i class="far fa-clock me-1"></i> {{ news.publish_date|date:"d/m/Y" }}</span>
+                                </div>
+                                <a href="{{ news.get_absolute_url }}" class="btn btn-sm btn-outline-primary">Leia mais</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="alert alert-info">
+                Nenhum resultado encontrado para "{{ query }}". Tente outra pesquisa.
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ query }}&page=1" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ query }}&page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ query }}&page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ query }}&page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Search Widget -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-search me-2"></i> Nova Pesquisa</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'news:search_results' %}" method="get">
+                        <div class="input-group">
+                            {{ search_form.q }}
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Categories Widget -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i> Categorias</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for category in categories %}
+                        <div class="col-6 mb-2">
+                            <a href="{{ category.get_absolute_url }}" class="text-decoration-none d-flex justify-content-between align-items-center">
+                                <span>{{ category.name }}</span>
+                                <span class="badge rounded-pill" style="background-color: {{ category.color }};">{{ category.get_news_count }}</span>
+                            </a>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <p class="mb-0">Nenhuma categoria disponível.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Newsletter Widget -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-envelope me-2"></i> Newsletter</h5>
+                </div>
+                <div class="card-body">
+                    <p>Receba as últimas notícias diretamente no seu email.</p>
+                    <form id="sidebar-newsletter-form">
+                        <div class="mb-3">
+                            <input type="email" class="form-control" placeholder="Seu email" required name="email">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Inscrever</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Parceiros Widget -->
+            {% if partners %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-md me-2"></i> Parceiros</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Conheça nossos parceiros e agende uma consulta.</p>
+                    
+                    <div class="row">
+                        {% for partner in partners %}
+                        <div class="col-12 mb-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="row g-0">
+                                    <div class="col-4">
+                                        <img src="{{ partner.photo.url }}" class="img-fluid rounded-start" alt="{{ partner.name }}" style="height: 100%; object-fit: cover;">
+                                    </div>
+                                    <div class="col-8">
+                                        <div class="card-body py-2">
+                                            <h6 class="card-title mb-0">{{ partner.name }}</h6>
+                                            <p class="card-text small text-muted">{{ partner.title }}</p>
+                                            <a href="{% url 'news:partner_detail' partner.pk %}" class="btn btn-sm btn-info text-white">Agendar Consulta</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <a href="{% url 'news:partner_list' %}" class="btn btn-outline-info w-100 mt-2">Ver Todos os Parceiros</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarNewsletterForm = document.getElementById('sidebar-newsletter-form');
+        
+        if (sidebarNewsletterForm) {
+            sidebarNewsletterForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const email = this.querySelector('input[name="email"]').value;
+                const csrfToken = '{{ csrf_token }}';
+                
+                fetch('{% url "news:newsletter_signup" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `email=${encodeURIComponent(email)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        sidebarNewsletterForm.innerHTML = '<div class="alert alert-success">Obrigado por se inscrever!</div>';
+                    } else {
+                        let errorMsg = 'Ocorreu um erro. Tente novamente.';
+                        if (data.errors && data.errors.email) {
+                            errorMsg = data.errors.email[0];
+                        }
+                        sidebarNewsletterForm.innerHTML = `<div class="alert alert-danger">${errorMsg}</div>`;
+                        
+                        // Reset form after 3 seconds
+                        setTimeout(() => {
+                            sidebarNewsletterForm.innerHTML = `
+                                <div class="mb-3">
+                                    <input type="email" class="form-control" placeholder="Seu email" required name="email">
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">Inscrever</button>
+                            `;
+                        }, 3000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    sidebarNewsletterForm.innerHTML = '<div class="alert alert-danger">Ocorreu um erro. Tente novamente.</div>';
+                });
+            });
+        }
+    });
+</script>
+{% endblock %} 

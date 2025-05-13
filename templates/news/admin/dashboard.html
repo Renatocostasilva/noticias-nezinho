@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Painel de Administração - Notícias{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Painel de Administração</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'news:news_admin' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'news:news_create' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus me-2"></i> Nova Notícia
+                    </a>
+                    <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user me-2"></i> Meu Perfil
+                    </a>
+                    <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-key me-2"></i> Alterar Senha
+                    </a>
+                    <a href="{% url 'accounts:logout' %}" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card shadow border-success">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted">Notícias Publicadas</h6>
+                                    <h2 class="mb-0">{{ published_count }}</h2>
+                                </div>
+                                <div class="bg-success text-white rounded-circle p-3">
+                                    <i class="fas fa-check fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow border-warning">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted">Rascunhos</h6>
+                                    <h2 class="mb-0">{{ draft_count }}</h2>
+                                </div>
+                                <div class="bg-warning text-white rounded-circle p-3">
+                                    <i class="fas fa-edit fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow border-info">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted">Categorias</h6>
+                                    <h2 class="mb-0">{{ categories|length }}</h2>
+                                </div>
+                                <div class="bg-info text-white rounded-circle p-3">
+                                    <i class="fas fa-folder fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Ações Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <a href="{% url 'news:news_create' %}" class="btn btn-primary d-block">
+                                <i class="fas fa-plus me-1"></i> Nova Notícia
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'news:partner_admin' %}" class="btn btn-info d-block text-white">
+                                <i class="fas fa-user-md me-1"></i> Parceiros
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'news:rss_feed_list' %}" class="btn btn-warning d-block text-dark">
+                                <i class="fas fa-rss me-1"></i> Feeds RSS
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent News -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Notícias Recentes</h5>
+                    <a href="{% url 'news:news_create' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-plus me-1"></i> Nova Notícia
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Título</th>
+                                    <th>Categoria</th>
+                                    <th>Status</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for news in recent_news %}
+                                <tr>
+                                    <td>{{ news.title|truncatechars:50 }}</td>
+                                    <td>
+                                        <span class="badge" style="background-color: {{ news.category.color }}">
+                                            {{ news.category.name }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if news.status == 'published' %}
+                                            <span class="badge bg-success">Publicado</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Rascunho</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ news.created_date|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'news:news_detail' news.publish_date.year news.publish_date.month news.publish_date.day news.slug %}" class="btn btn-outline-primary" target="_blank">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'news:news_update' news.id %}" class="btn btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'news:news_delete' news.id %}" class="btn btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">Nenhuma notícia encontrada.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Categories -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Categorias</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for category in categories %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100" style="border-left: 5px solid {{ category.color }}">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ category.name }}</h5>
+                                    <p class="card-text">{{ category.news_count }} notícias</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                Nenhuma categoria encontrada.
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

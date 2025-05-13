@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Publicar Anúncio - Classificados - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'news:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'classifieds:ad_list' %}">Classificados</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Publicar Anúncio</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Publicar Anúncio</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Título do Anúncio</label>
+                            {{ form.title }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Descrição (máximo 200 caracteres)</label>
+                            {{ form.description }}
+                            <div class="form-text" id="char-count">0/200 caracteres</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.photos.id_for_label }}" class="form-label">Foto do Anúncio</label>
+                            {{ form.photos }}
+                            <div class="form-text">Selecione uma foto para o seu anúncio.</div>
+                        </div>
+                        
+                        <hr>
+                        <h5>Seus Dados (visíveis apenas para moderadores)</h5>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Nome Completo</label>
+                            {{ form.name }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.email }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">Telefone</label>
+                            {{ form.phone }}
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.highlight }}
+                            <label class="form-check-label" for="{{ form.highlight.id_for_label }}">
+                                Destacar meu anúncio por R$ 10,00
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Publicar Anúncio</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const descriptionField = document.getElementById('{{ form.description.id_for_label }}');
+        const charCount = document.getElementById('char-count');
+        
+        function updateCharCount() {
+            const currentLength = descriptionField.value.length;
+            charCount.textContent = `${currentLength}/200 caracteres`;
+            
+            if (currentLength > 200) {
+                charCount.classList.add('text-danger');
+            } else {
+                charCount.classList.remove('text-danger');
+            }
+        }
+        
+        descriptionField.addEventListener('input', updateCharCount);
+        updateCharCount();
+    });
+</script>
+{% endblock %} 

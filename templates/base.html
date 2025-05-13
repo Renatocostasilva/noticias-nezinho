@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Portal de notícias moderno e atualizado">
+    <meta name="keywords" content="notícias, política, esporte, tecnologia, entretenimento">
+    <title>{% block title %}Notícias{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --dark-color: #212529;
+            --light-color: #f8f9fa;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .navbar-brand {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.8rem;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .news-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+        }
+        
+        .news-meta {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+        }
+        
+        .category-badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+        
+        .footer {
+            background-color: var(--dark-color);
+            color: var(--light-color);
+            padding: 3rem 0;
+        }
+        
+        .footer a {
+            color: var(--light-color);
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            color: var(--primary-color);
+        }
+        
+        .social-icons a {
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            line-height: 36px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+        
+        .social-icons a:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* Carousel styling */
+        .carousel-caption {
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 5px;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+        }
+        
+        .carousel-caption h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .carousel-caption .btn {
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        @media (min-width: 768px) {
+            .carousel-caption h2 {
+                font-size: 1.75rem;
+            }
+            
+            .carousel-caption .btn {
+                padding: 0.375rem 0.75rem;
+                font-size: 1rem;
+            }
+        }
+        
+        /* Ajustes adicionais para dispositivos móveis */
+        @media (max-width: 576px) {
+            .carousel-caption {
+                bottom: 30px;
+                padding: 10px;
+            }
+            
+            .carousel-caption h2 {
+                font-size: 1rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .carousel-caption .btn {
+                padding: 0.2rem 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
+        
+        /* Estilos para os indicadores do carrossel */
+        .carousel-indicators {
+            position: absolute;
+            bottom: 10px;
+            z-index: 15;
+        }
+        
+        .carousel-indicators button {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin: 0 4px;
+        }
+        
+        /* Sidebar styling */
+        .sidebar-title {
+            position: relative;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .sidebar-title:after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 50px;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 767.98px) {
+            .carousel-caption {
+                padding: 10px;
+            }
+            
+            .carousel-caption h2 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <!-- Top Navigation Bar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="{% url 'news:home' %}">Tribuna do Vale do São Francisco</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="navbarMain">
+                    <!-- Categories Navigation -->
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'news:home' %}">Home</a>
+                        </li>
+                        {% for category in categories %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ category.get_absolute_url }}">{{ category.name }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'news:partner_list' %}">Parceiros</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'classifieds:ad_list' %}">Classificados</a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Search Form -->
+                    <form class="d-flex me-2" action="{% url 'news:search_results' %}" method="get">
+                        {{ search_form.q }}
+                        <button class="btn btn-outline-light ms-2" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                    
+                    <!-- User Authentication -->
+                    <ul class="navbar-nav">
+                        {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle me-1"></i> {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Meu Perfil</a></li>
+                                {% if user.is_staff %}
+                                <li><a class="dropdown-item" href="{% url 'news:news_admin' %}">Painel Admin</a></li>
+                                <li><a class="dropdown-item" href="{% url 'news:partner_admin' %}">Gerenciar Parceiros</a></li>
+                                <li><a class="dropdown-item" href="{% url 'classifieds:admin_dashboard' %}">Gerenciar Classificados</a></li>
+                                <li><a class="dropdown-item" href="{% url 'news:rss_feed_list' %}">Gerenciar Feeds RSS</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">Sair</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:login' %}">Entrar</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:signup' %}">Cadastrar</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="py-4">
+        <div class="container">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="mb-4">Sobre Nós</h5>
+                    <p>Portal de notícias moderno e atualizado, trazendo as principais informações do Brasil e do mundo.</p>
+                    <div class="social-icons mt-3">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="mb-4">Links Rápidos</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'news:home' %}">Home</a></li>
+                        {% for category in categories|slice:":5" %}
+                        <li class="mb-2"><a href="{{ category.get_absolute_url }}">{{ category.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div class="col-md-4">
+                    <h5 class="mb-4">Newsletter</h5>
+                    <p>Receba as últimas notícias diretamente no seu email.</p>
+                    <form id="newsletter-form" class="mt-3">
+                        <div class="input-group mb-3">
+                            <input type="email" class="form-control" placeholder="Seu email" required name="email">
+                            <button class="btn btn-primary" type="submit">Inscrever</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <hr class="my-4 bg-light">
+            
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="mb-0">&copy; {% now "Y" %} Notícias. Todos os direitos reservados.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="mb-0">
+                        <a href="#">Termos de Uso</a> | 
+                        <a href="#">Política de Privacidade</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Newsletter AJAX Submission -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const newsletterForm = document.getElementById('newsletter-form');
+            
+            if (newsletterForm) {
+                newsletterForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const email = this.querySelector('input[name="email"]').value;
+                    const csrfToken = '{{ csrf_token }}';
+                    
+                    fetch('{% url "news:newsletter_signup" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: `email=${encodeURIComponent(email)}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            newsletterForm.innerHTML = '<div class="alert alert-success">Obrigado por se inscrever!</div>';
+                        } else {
+                            let errorMsg = 'Ocorreu um erro. Tente novamente.';
+                            if (data.errors && data.errors.email) {
+                                errorMsg = data.errors.email[0];
+                            }
+                            newsletterForm.innerHTML = `<div class="alert alert-danger">${errorMsg}</div>`;
+                            
+                            // Reset form after 3 seconds
+                            setTimeout(() => {
+                                newsletterForm.innerHTML = `
+                                    <div class="input-group mb-3">
+                                        <input type="email" class="form-control" placeholder="Seu email" required name="email">
+                                        <button class="btn btn-primary" type="submit">Inscrever</button>
+                                    </div>
+                                `;
+                            }, 3000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        newsletterForm.innerHTML = '<div class="alert alert-danger">Ocorreu um erro. Tente novamente.</div>';
+                    });
+                });
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

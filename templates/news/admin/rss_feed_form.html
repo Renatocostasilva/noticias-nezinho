@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if form.instance.pk %}Editar Feed RSS{% else %}Novo Feed RSS{% endif %} - Notícias
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Painel de Administração</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'news:news_admin' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'news:news_create' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus me-2"></i> Nova Notícia
+                    </a>
+                    <a href="{% url 'news:partner_admin' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-md me-2"></i> Gerenciar Parceiros
+                    </a>
+                    <a href="{% url 'news:rss_feed_list' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-rss me-2"></i> Gerenciar Feeds RSS
+                    </a>
+                    <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user me-2"></i> Meu Perfil
+                    </a>
+                    <a href="{% url 'accounts:logout' %}" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        {% if form.instance.pk %}
+                            <i class="fas fa-edit me-2"></i> Editar Feed RSS: {{ form.instance.name }}
+                        {% else %}
+                            <i class="fas fa-plus me-2"></i> Novo Feed RSS
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                {{ form.name|as_crispy_field }}
+                                {{ form.url|as_crispy_field }}
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.category|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.max_items|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Logo</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if form.instance.logo %}
+                                            <div class="mb-3 text-center">
+                                                <img src="{{ form.instance.logo.url }}" class="img-fluid rounded" alt="{{ form.instance.name }}" style="max-height: 100px;">
+                                            </div>
+                                        {% endif %}
+                                        {{ form.logo|as_crispy_field }}
+                                    </div>
+                                </div>
+                                
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Configurações</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        {{ form.active|as_crispy_field }}
+                                        {{ form.order|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'news:rss_feed_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

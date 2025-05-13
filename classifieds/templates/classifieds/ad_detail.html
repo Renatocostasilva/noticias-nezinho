@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ ad.title }} - Classificados - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'news:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'classifieds:ad_list' %}">Classificados</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ ad.title }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                {% if ad.highlight %}
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">{{ ad.title }}</h4>
+                    </div>
+                {% else %}
+                    <div class="card-header">
+                        <h4 class="mb-0">{{ ad.title }}</h4>
+                    </div>
+                {% endif %}
+                
+                <!-- Carrossel de fotos -->
+                {% if ad.photos.exists %}
+                    <div id="adCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-indicators">
+                            {% for photo in ad.photos.all %}
+                                <button type="button" data-bs-target="#adCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
+                            {% endfor %}
+                        </div>
+                        <div class="carousel-inner">
+                            {% for photo in ad.photos.all %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ photo.image.url }}" class="d-block w-100" alt="Foto {{ forloop.counter }}" style="height: 400px; object-fit: contain;">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#adCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#adCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="bg-light text-center py-5">
+                        <i class="fas fa-image fa-5x text-muted"></i>
+                        <p class="mt-3">Nenhuma foto disponível</p>
+                    </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <p class="card-text">{{ ad.description }}</p>
+                    <p class="text-muted small">
+                        <i class="far fa-calendar me-1"></i> Publicado em: {{ ad.created_at|date:"d/m/Y" }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Contatar Anunciante</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.sender_name.id_for_label }}" class="form-label">Seu Nome</label>
+                            {{ form.sender_name }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.sender_email.id_for_label }}" class="form-label">Seu Email</label>
+                            {{ form.sender_email }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.message.id_for_label }}" class="form-label">Mensagem</label>
+                            {{ form.message }}
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">Enviar Mensagem</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

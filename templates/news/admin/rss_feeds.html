@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gerenciar Feeds RSS - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'news:home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Gerenciar Feeds RSS</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="news-title">Gerenciar Feeds RSS</h1>
+                <div>
+                    <a href="{% url 'news:refresh_all_rss_feeds' %}" class="btn btn-warning me-2">
+                        <i class="fas fa-sync-alt"></i> Atualizar Todos
+                    </a>
+                    <a href="{% url 'news:rss_feed_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Adicionar Feed
+                    </a>
+                </div>
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Status Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total de Feeds</h5>
+                    <p class="card-text display-4">{{ feeds.count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Feeds Ativos</h5>
+                    <p class="card-text display-4">{{ active_feeds }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Feeds Inativos</h5>
+                    <p class="card-text display-4">{{ inactive_feeds }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Feed List -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Lista de Feeds RSS</h5>
+                </div>
+                <div class="card-body">
+                    {% if feeds %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>URL</th>
+                                        <th>Categoria</th>
+                                        <th>Status</th>
+                                        <th>Itens Máx.</th>
+                                        <th>Ordem</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for feed in feeds %}
+                                        <tr>
+                                            <td>{{ feed.name }}</td>
+                                            <td>
+                                                <a href="{{ feed.url }}" target="_blank" title="{{ feed.url }}">
+                                                    {{ feed.url|truncatechars:30 }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% if feed.category %}
+                                                    {{ feed.category.name }}
+                                                {% else %}
+                                                    <span class="text-muted">Sem categoria</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if feed.active %}
+                                                    <span class="badge bg-success">Ativo</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Inativo</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ feed.max_items }}</td>
+                                            <td>{{ feed.order }}</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{% url 'news:rss_feed_update' feed.id %}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'news:rss_feed_delete' feed.id %}" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                    {% if feed.active %}
+                                                        <a href="{% url 'news:rss_feed_refresh' feed.id %}" class="btn btn-sm btn-outline-success" title="Atualizar feed">
+                                                            <i class="fas fa-sync-alt"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Nenhum feed RSS cadastrado. <a href="{% url 'news:rss_feed_create' %}">Adicionar um novo feed</a>.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Feeds Preview -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Visualização dos Feeds Ativos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for feed in active_feed_list %}
+                            <div class="col-md-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">{{ feed.name }}</h5>
+                                        <span class="badge bg-success">{{ feed.category.name|default:"Sem categoria" }}</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text text-muted small">
+                                            <i class="fas fa-link"></i> {{ feed.url|truncatechars:50 }}
+                                        </p>
+                                        <p class="card-text">
+                                            <strong>Itens máximos:</strong> {{ feed.max_items }} | 
+                                            <strong>Ordem:</strong> {{ feed.order }}
+                                        </p>
+                                        <div class="mt-3">
+                                            <a href="{% url 'news:rss_feed_update' feed.id %}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </a>
+                                            <a href="{% url 'news:rss_feed_refresh' feed.id %}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-sync-alt"></i> Atualizar
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    Nenhum feed RSS ativo no momento.
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

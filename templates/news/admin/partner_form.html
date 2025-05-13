@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if form.instance.pk %}Editar Parceiro{% else %}Novo Parceiro{% endif %} - Notícias
+{% endblock %}
+
+{% block extra_head %}
+{{ form.media }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Painel de Administração</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'news:news_admin' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'news:news_create' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus me-2"></i> Nova Notícia
+                    </a>
+                    <a href="{% url 'news:partner_admin' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-user-md me-2"></i> Parceiros
+                    </a>
+                    <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user me-2"></i> Meu Perfil
+                    </a>
+                    <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-key me-2"></i> Alterar Senha
+                    </a>
+                    <a href="{% url 'accounts:logout' %}" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        {% if form.instance.pk %}
+                            Editar Parceiro: {{ form.instance.name }}
+                        {% else %}
+                            Novo Parceiro
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                {{ form.name|as_crispy_field }}
+                                {{ form.title|as_crispy_field }}
+                                {{ form.description|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Foto</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if form.instance.photo %}
+                                            <div class="mb-3">
+                                                <img src="{{ form.instance.photo.url }}" class="img-fluid rounded" alt="{{ form.instance.name }}">
+                                            </div>
+                                        {% endif %}
+                                        {{ form.photo|as_crispy_field }}
+                                    </div>
+                                </div>
+                                
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Configurações</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        {{ form.active|as_crispy_field }}
+                                        {{ form.order|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'news:partner_admin' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

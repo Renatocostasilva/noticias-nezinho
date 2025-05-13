@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ news.title }} | Notícias{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- News Article -->
+        <article class="mb-5">
+            <!-- Category and Title -->
+            <div class="mb-4">
+                <span class="badge" style="background-color: {{ news.category.color }};">{{ news.category.name }}</span>
+                <h1 class="mt-2 news-title">{{ news.title }}</h1>
+                <div class="news-meta">
+                    <span><i class="far fa-user me-1"></i> {{ news.author.get_full_name|default:news.author.username }}</span>
+                    <span class="ms-3"><i class="far fa-clock me-1"></i> {{ news.publish_date|date:"d/m/Y H:i" }}</span>
+                    <span class="ms-3"><i class="far fa-eye me-1"></i> {{ news.hit_count.hits }} visualizações</span>
+                </div>
+            </div>
+            
+            <!-- Featured Image -->
+            <div class="mb-4">
+                <img src="{{ news.featured_image.url }}" class="img-fluid rounded" alt="{{ news.title }}">
+            </div>
+            
+            <!-- Content -->
+            <div class="news-content mb-4">
+                {{ news.content|safe }}
+            </div>
+            
+            <!-- Tags -->
+            {% if news.tags.all %}
+            <div class="mb-4">
+                <h5>Tags:</h5>
+                {% for tag in news.tags.all %}
+                <a href="#" class="badge bg-secondary text-decoration-none me-1">{{ tag.name }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Social Sharing -->
+            <div class="mb-5">
+                <h5>Compartilhe:</h5>
+                <div class="social-sharing mt-2">
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="btn btn-primary me-2">
+                        <i class="fab fa-facebook-f"></i> Facebook
+                    </a>
+                    <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ news.title }}" target="_blank" class="btn btn-info me-2">
+                        <i class="fab fa-twitter"></i> Twitter
+                    </a>
+                    <a href="https://api.whatsapp.com/send?text={{ news.title }} {{ request.build_absolute_uri }}" target="_blank" class="btn btn-success me-2">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </a>
+                    <a href="mailto:?subject={{ news.title }}&body={{ request.build_absolute_uri }}" class="btn btn-secondary">
+                        <i class="fas fa-envelope"></i> Email
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Comments Section -->
+            <div class="comments-section">
+                <h3 class="mb-4">Comentários ({{ comments.count }})</h3>
+                
+                <!-- Comment Form -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Deixe seu comentário</h5>
+                        <form method="post" action="">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {{ comment_form.name.label_tag }}
+                                {{ comment_form.name }}
+                            </div>
+                            <div class="mb-3">
+                                {{ comment_form.email.label_tag }}
+                                {{ comment_form.email }}
+                            </div>
+                            <div class="mb-3">
+                                {{ comment_form.content.label_tag }}
+                                {{ comment_form.content }}
+                            </div>
+                            <button type="submit" class="btn btn-primary">Enviar Comentário</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Comments List -->
+                {% if comments %}
+                <div class="comments-list">
+                    {% for comment in comments %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ comment.name }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ comment.created_date|date:"d/m/Y H:i" }}</h6>
+                            <p class="card-text">{{ comment.content }}</p>
+                            
+                            <!-- Reply Button -->
+                            <button class="btn btn-sm btn-outline-primary reply-btn" data-comment-id="{{ comment.id }}">
+                                Responder
+                            </button>
+                            
+                            <!-- Reply Form (hidden by default) -->
+                            <div class="reply-form mt-3" id="reply-form-{{ comment.id }}" style="display: none;">
+                                <form method="post" action="">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                                    <div class="mb-3">
+                                        {{ comment_form.name.label_tag }}
+                                        {{ comment_form.name }}
+                                    </div>
+                                    <div class="mb-3">
+                                        {{ comment_form.email.label_tag }}
+                                        {{ comment_form.email }}
+                                    </div>
+                                    <div class="mb-3">
+                                        {{ comment_form.content.label_tag }}
+                                        {{ comment_form.content }}
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Enviar Resposta</button>
+                                    <button type="button" class="btn btn-secondary cancel-reply" data-comment-id="{{ comment.id }}">Cancelar</button>
+                                </form>
+                            </div>
+                            
+                            <!-- Replies -->
+                            {% if comment.replies.all %}
+                            <div class="replies mt-3">
+                                {% for reply in comment.replies.all %}
+                                <div class="card mb-2">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ reply.name }}</h6>
+                                        <h6 class="card-subtitle mb-2 text-muted">{{ reply.created_date|date:"d/m/Y H:i" }}</h6>
+                                        <p class="card-text">{{ reply.content }}</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Seja o primeiro a comentar!
+                </div>
+                {% endif %}
+            </div>
+        </article>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Related News -->
+        {% if related_news %}
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-newspaper me-2"></i> Notícias Relacionadas</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for related in related_news %}
+                    <li class="list-group-item px-0">
+                        <div class="row g-0">
+                            <div class="col-3">
+                                <img src="{{ related.featured_image.url }}" class="img-fluid rounded" alt="{{ related.title }}" style="height: 60px; object-fit: cover;">
+                            </div>
+                            <div class="col-9 ps-3">
+                                <h6 class="mb-1"><a href="{{ related.get_absolute_url }}" class="text-decoration-none text-dark">{{ related.title|truncatechars:60 }}</a></h6>
+                                <small class="text-muted"><i class="far fa-clock me-1"></i> {{ related.publish_date|date:"d/m/Y" }}</small>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Popular News -->
+        {% if popular_news %}
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-fire me-2"></i> Notícias Populares</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for popular in popular_news %}
+                    <li class="list-group-item px-0">
+                        <div class="row g-0">
+                            <div class="col-3">
+                                <img src="{{ popular.featured_image.url }}" class="img-fluid rounded" alt="{{ popular.title }}" style="height: 60px; object-fit: cover;">
+                            </div>
+                            <div class="col-9 ps-3">
+                                <h6 class="mb-1"><a href="{{ popular.get_absolute_url }}" class="text-decoration-none text-dark">{{ popular.title|truncatechars:60 }}</a></h6>
+                                <small class="text-muted"><i class="far fa-eye me-1"></i> {{ popular.hit_count.hits }} visualizações</small>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Categories Widget -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i> Categorias</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for category in categories %}
+                    <div class="col-6 mb-2">
+                        <a href="{{ category.get_absolute_url }}" class="text-decoration-none d-flex justify-content-between align-items-center">
+                            <span>{{ category.name }}</span>
+                            <span class="badge rounded-pill" style="background-color: {{ category.color }};">{{ category.get_news_count }}</span>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <p class="mb-0">Nenhuma categoria disponível.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Reply functionality
+        const replyButtons = document.querySelectorAll('.reply-btn');
+        const cancelButtons = document.querySelectorAll('.cancel-reply');
+        
+        replyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.getAttribute('data-comment-id');
+                document.getElementById(`reply-form-${commentId}`).style.display = 'block';
+                this.style.display = 'none';
+            });
+        });
+        
+        cancelButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.getAttribute('data-comment-id');
+                document.getElementById(`reply-form-${commentId}`).style.display = 'none';
+                document.querySelector(`.reply-btn[data-comment-id="${commentId}"]`).style.display = 'inline-block';
+            });
+        });
+    });
+</script>
+{% endblock %} 

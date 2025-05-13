@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Parceiros - Notícias{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4 news-title">Parceiros</h1>
+            <p class="lead mb-5">Conheça nossos parceiros e agende uma consulta personalizada para cuidar da sua saúde mental.</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% for partner in partners %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        <img src="{{ partner.photo.url }}" class="img-fluid rounded-start" alt="{{ partner.name }}" style="height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ partner.name }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ partner.title }}</h6>
+                            <div class="card-text mb-3">{{ partner.description|safe|truncatewords_html:30 }}</div>
+                            <a href="{% url 'news:partner_detail' partner.pk %}" class="btn btn-info text-white">Ver Detalhes e Agendar</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                Nenhum parceiro disponível no momento.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

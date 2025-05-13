@@ -1,0 +1,432 @@
+{% extends 'base.html' %}
+
+{% block title %}Tribuna do Vale do São Francisco{% endblock %}
+
+{% block content %}
+<!-- Slider Section -->
+{% if slider_news %}
+<section class="mb-5">
+    <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            {% for news in slider_news %}
+            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
+            {% endfor %}
+        </div>
+        <div class="carousel-inner">
+            {% for news in slider_news %}
+            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                <img src="{{ news.featured_image.url }}" class="d-block w-100" alt="{{ news.title }}" style="height: 500px; object-fit: cover;">
+                <div class="carousel-caption d-block">
+                    <span class="badge bg-primary mb-2">{{ news.category.name }}</span>
+                    <h2 class="fs-4 fs-md-2">{{ news.title }}</h2>
+                    <p class="d-none d-sm-block">{{ news.summary|truncatechars:150 }}</p>
+                    <a href="{{ news.get_absolute_url }}" class="btn btn-primary">Leia mais</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+</section>
+{% endif %}
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- Featured News Section -->
+        {% if featured_news %}
+        <section class="mb-5">
+            <h3 class="mb-4 news-title">Notícias em Destaque</h3>
+            <div class="row">
+                {% for news in featured_news %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <img src="{{ news.featured_image.url }}" class="card-img-top" alt="{{ news.title }}" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <span class="badge bg-{{ news.category.color|default:'primary' }}">{{ news.category.name }}</span>
+                            <h5 class="card-title mt-2 news-title">
+                                <a href="{{ news.get_absolute_url }}" class="text-decoration-none text-dark">{{ news.title }}</a>
+                            </h5>
+                            <p class="card-text">{{ news.summary|truncatechars:100 }}</p>
+                        </div>
+                        <div class="card-footer bg-transparent border-0">
+                            <div class="d-flex justify-content-between align-items-center news-meta">
+                                <span><i class="far fa-clock me-1"></i> {{ news.publish_date|date:"d/m/Y" }}</span>
+                                <a href="{{ news.get_absolute_url }}" class="text-primary">Leia mais</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+        
+        <!-- Recent News Section -->
+        <section>
+            <h3 class="mb-4 news-title">Notícias Recentes</h3>
+            
+            {% for news in news_list %}
+            <div class="card mb-4">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        <img src="{{ news.featured_image.url }}" class="img-fluid rounded-start" alt="{{ news.title }}" style="height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <span class="badge bg-{{ news.category.color|default:'primary' }}">{{ news.category.name }}</span>
+                            <h5 class="card-title mt-2 news-title">
+                                <a href="{{ news.get_absolute_url }}" class="text-decoration-none text-dark">{{ news.title }}</a>
+                            </h5>
+                            <p class="card-text">{{ news.summary|truncatechars:150 }}</p>
+                            <div class="d-flex justify-content-between align-items-center news-meta">
+                                <div>
+                                    <span><i class="far fa-user me-1"></i> {{ news.author.get_full_name|default:news.author.username }}</span>
+                                    <span class="ms-3"><i class="far fa-clock me-1"></i> {{ news.publish_date|date:"d/m/Y" }}</span>
+                                </div>
+                                <a href="{{ news.get_absolute_url }}" class="btn btn-sm btn-outline-primary">Leia mais</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="alert alert-info">
+                Nenhuma notícia disponível no momento.
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </section>
+        <!-- RSS News Section -->
+        {% if rss_feeds %}
+        <section class="mb-5">
+            <h3 class="mb-4 news-title">Notícias Externas</h3>
+            
+            <!-- RSS Feed Tabs -->
+            <ul class="nav nav-tabs mb-3" id="rssTabs" role="tablist">
+                {% for feed in rss_feeds %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if forloop.first %}active{% endif %}" 
+                            id="feed-{{ feed.id }}-tab" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#feed-{{ feed.id }}" 
+                            type="button" 
+                            role="tab" 
+                            aria-controls="feed-{{ feed.id }}" 
+                            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                        {% if feed.logo %}
+                        <img src="{{ feed.logo.url }}" alt="{{ feed.name }}" height="20" class="me-1">
+                        {% else %}
+                        <i class="fas fa-rss me-1"></i>
+                        {% endif %}
+                        {{ feed.name }}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+            
+            <!-- RSS Feed Content -->
+            <div class="tab-content" id="rssTabsContent">
+                {% for feed in rss_feeds %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                     id="feed-{{ feed.id }}" 
+                     role="tabpanel" 
+                     aria-labelledby="feed-{{ feed.id }}-tab">
+                    
+                    <div class="row">
+                        {% for entry in feed.entries %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                {% if entry.image_url %}
+                                <img src="{{ entry.image_url }}" class="card-img-top" alt="{{ entry.title }}" style="height: 150px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                                    {% if feed.logo %}
+                                    <img src="{{ feed.logo.url }}" alt="{{ feed.name }}" height="50">
+                                    {% else %}
+                                    <i class="fas fa-rss fa-3x text-muted"></i>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title" style="font-size: 1rem;">
+                                        <a href="{{ entry.link }}" class="text-decoration-none text-dark" target="_blank">
+                                            {{ entry.title|truncatechars:60 }}
+                                        </a>
+                                    </h5>
+                                    <p class="card-text small">{{ entry.summary|striptags|truncatechars:80 }}</p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="far fa-clock me-1"></i> 
+                                            {% if entry.pub_date %}
+                                                {{ entry.pub_date|date:"d/m/Y" }}
+                                            {% else %}
+                                                {{ entry.published|truncatechars:10 }}
+                                            {% endif %}
+                                        </small>
+                                        <a href="{{ entry.link }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class="fas fa-external-link-alt me-1"></i> Ler
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                Nenhuma notícia disponível para este feed.
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+        
+        
+        
+        <!-- Classificados em Destaque -->
+        {% if featured_ads %}
+        <section class="container my-5">
+            <h2 class="section-title mb-4">Classificados em Destaque</h2>
+            <div class="row">
+                {% for ad in featured_ads %}
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            {% if ad.photos.first %}
+                                <img src="{{ ad.photos.first.image.url }}" class="card-img-top" alt="{{ ad.title }}" style="height: 180px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light text-center pt-4" style="height: 180px;">
+                                    <i class="fas fa-image fa-4x text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ ad.title }}</h5>
+                                <p class="card-text">{{ ad.description|truncatechars:100 }}</p>
+                            </div>
+                            <div class="card-footer bg-white">
+                                <a href="{% url 'classifieds:ad_detail' ad.id %}" class="btn btn-sm btn-outline-primary">Ver detalhes</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="text-center mt-3">
+                <a href="{% url 'classifieds:ad_list' %}" class="btn btn-primary">Ver todos os classificados</a>
+            </div>
+        </section>
+        {% endif %}
+        
+        
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+
+        <!-- Parceiros Widget -->
+        {% if partners %}
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-user-md me-2"></i> Parceiros</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Conheça nossos parceiros e agende uma consulta.</p>
+                
+                <div class="row">
+                    {% for partner in partners %}
+                    <div class="col-12 mb-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="row g-0">
+                                <div class="col-4">
+                                    <img src="{{ partner.photo.url }}" class="img-fluid rounded-start" alt="{{ partner.name }}" style="height: 100%; object-fit: cover;">
+                                </div>
+                                <div class="col-8">
+                                    <div class="card-body py-2">
+                                        <h6 class="card-title mb-0">{{ partner.name }}</h6>
+                                        <p class="card-text small text-muted">{{ partner.title }}</p>
+                                        <a href="{% url 'news:partner_detail' partner.pk %}" class="btn btn-sm btn-info text-white">Agendar Consulta</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <a href="{% url 'news:partner_list' %}" class="btn btn-outline-info w-100 mt-2">Ver Todos os Parceiros</a>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Trending News Widget -->
+        {% if trending_news %}
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-fire me-2"></i> Notícias Populares</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for news in trending_news %}
+                    <li class="list-group-item px-0">
+                        <div class="row g-0">
+                            <div class="col-3">
+                                <img src="{{ news.featured_image.url }}" class="img-fluid rounded" alt="{{ news.title }}" style="height: 60px; object-fit: cover;">
+                            </div>
+                            <div class="col-9 ps-3">
+                                <h6 class="mb-1"><a href="{{ news.get_absolute_url }}" class="text-decoration-none text-dark">{{ news.title|truncatechars:60 }}</a></h6>
+                                <small class="text-muted"><i class="far fa-clock me-1"></i> {{ news.publish_date|date:"d/m/Y" }}</small>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Categories Widget -->
+        {% if categories %}
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i> Categorias</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for category in categories %}
+                    <div class="col-6 mb-2">
+                        <a href="{{ category.get_absolute_url }}" class="text-decoration-none d-flex justify-content-between align-items-center">
+                            <span>{{ category.name }}</span>
+                            <span class="badge rounded-pill bg-{{ category.color|default:'primary' }}">{{ category.get_news_count }}</span>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <p class="mb-0">Nenhuma categoria disponível.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Newsletter Widget -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-envelope me-2"></i> Newsletter</h5>
+            </div>
+            <div class="card-body">
+                <p>Receba as últimas notícias diretamente no seu email.</p>
+                <form id="sidebar-newsletter-form">
+                    <div class="mb-3">
+                        <input type="email" class="form-control" placeholder="Seu email" required name="email">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Inscrever</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarNewsletterForm = document.getElementById('sidebar-newsletter-form');
+        
+        if (sidebarNewsletterForm) {
+            sidebarNewsletterForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const email = this.querySelector('input[name="email"]').value;
+                const csrfToken = '{{ csrf_token }}';
+                
+                fetch('{% url "news:newsletter_signup" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `email=${encodeURIComponent(email)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        sidebarNewsletterForm.innerHTML = '<div class="alert alert-success">Obrigado por se inscrever!</div>';
+                    } else {
+                        let errorMsg = 'Ocorreu um erro. Tente novamente.';
+                        if (data.errors && data.errors.email) {
+                            errorMsg = data.errors.email[0];
+                        }
+                        sidebarNewsletterForm.innerHTML = `<div class="alert alert-danger">${errorMsg}</div>`;
+                        
+                        // Reset form after 3 seconds
+                        setTimeout(() => {
+                            sidebarNewsletterForm.innerHTML = `
+                                <div class="mb-3">
+                                    <input type="email" class="form-control" placeholder="Seu email" required name="email">
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">Inscrever</button>
+                            `;
+                        }, 3000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    sidebarNewsletterForm.innerHTML = '<div class="alert alert-danger">Ocorreu um erro. Tente novamente.</div>';
+                });
+            });
+        }
+    });
+</script>
+{% endblock %} 
