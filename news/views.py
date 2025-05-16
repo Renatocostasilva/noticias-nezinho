@@ -18,6 +18,13 @@ from classifieds.models import Ad  # Importar o modelo de anúncios
 import random
 from django.core.cache import cache
 
+def clear_news_cache():
+    """Função auxiliar para limpar o cache de notícias."""
+    cache.clear()  # Limpa todo o cache
+    # Se quiser ser mais seletivo:
+    # cache.delete('rss_feeds_cache')
+    # cache.delete_many(['lista_de_chaves_para_excluir'])
+
 class HomeView(ListView):
     """View for the homepage."""
     model = News
@@ -270,8 +277,11 @@ class NewsCreateView(LoginRequiredMixin, CreateView):
     
     def form_valid(self, form):
         form.instance.author = self.request.user
+        response = super().form_valid(form)
+        # Limpar o cache após criar uma notícia
+        clear_news_cache()
         messages.success(self.request, 'Notícia criada com sucesso!')
-        return super().form_valid(form)
+        return response
     
     def post(self, request, *args, **kwargs):
         # Log para depuração
@@ -303,8 +313,11 @@ class NewsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return self.request.user == news.author or self.request.user.is_staff
     
     def form_valid(self, form):
+        response = super().form_valid(form)
+        # Limpar o cache após atualizar uma notícia
+        clear_news_cache()
         messages.success(self.request, 'Notícia atualizada com sucesso!')
-        return super().form_valid(form)
+        return response
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -346,6 +359,22 @@ class NewsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         news = self.get_object()
         return self.request.user == news.author or self.request.user.is_staff
+    
+    def delete(self, request, *args, **kwargs):
+        """Sobrescrever o método delete para limpar o cache quando uma notícia é excluída."""
+        # Obter o objeto antes de excluí-lo
+        self.object = self.get_object()
+        
+        # Chamar o método delete original para excluir o objeto
+        response = super().delete(request, *args, **kwargs)
+        
+        # Limpar o cache
+        clear_news_cache()
+        
+        # Adicionar mensagem de sucesso
+        messages.success(request, 'Notícia excluída com sucesso!')
+        
+        return response
 
 @login_required
 def admin_dashboard(request):
