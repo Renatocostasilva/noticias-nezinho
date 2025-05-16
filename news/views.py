@@ -262,83 +262,49 @@ class NewsCreateView(LoginRequiredMixin, CreateView):
     model = News
     form_class = NewsForm
     template_name = 'news/admin/news_form.html'
+    success_url = reverse_lazy('news:admin_dashboard')
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.object = None
     
-    def get(self, request, *args, **kwargs):
-        self.object = None
-        return super().get(request, *args, **kwargs)
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        messages.success(self.request, 'Notícia criada com sucesso!')
+        return super().form_valid(form)
     
     def post(self, request, *args, **kwargs):
-        self.object = None  # Inicializa self.object como None para evitar erro
+        # Log para depuração
+        if 'featured_image' in request.FILES:
+            image = request.FILES['featured_image']
+            print("--- DEBUG UPLOAD DE IMAGEM ---")
+            print(f"Nome do arquivo: {image.name}")
+            print(f"Tamanho: {image.size} bytes")
+            print(f"Tipo de conteúdo: {image.content_type}")
+        else:
+            print("Nenhuma imagem enviada no formulário")
+        
+        # Continua com o processamento normal do formulário
         form = self.get_form()
-        try:
-            # Log para depuração
-            print("\n\n--- DEBUG UPLOAD DE IMAGEM ---")
-            if 'featured_image' in request.FILES:
-                img = request.FILES['featured_image']
-                print(f"Nome do arquivo: {img.name}")
-                print(f"Tamanho: {img.size} bytes")
-                print(f"Tipo de conteúdo: {img.content_type}")
-            else:
-                print("Nenhum arquivo enviado no campo 'featured_image'")
-                
-            if form.is_valid():
-                return self.form_valid(form)
-            else:
-                print(f"Erros de validação do formulário: {form.errors}")
-                return self.form_invalid(form)
-        except Exception as e:
-            import traceback
-            print(f"ERRO NO UPLOAD: {str(e)}")
-            print(traceback.format_exc())
-            messages.error(request, f"Erro ao criar notícia: {str(e)}")
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
             return self.form_invalid(form)
-    
-    def form_valid(self, form):
-        try:
-            form.instance.author = self.request.user
-            response = super().form_valid(form)
-            # Verificamos se a imagem foi salva corretamente
-            if form.instance.featured_image:
-                # Registramos o caminho completo da imagem para debug
-                import os
-                from django.conf import settings
-                full_path = os.path.join(settings.MEDIA_ROOT, str(form.instance.featured_image))
-                print(f"Imagem salva em: {full_path}")
-                
-                # Garantimos que o arquivo existe
-                if not os.path.exists(full_path):
-                    print(f"ERRO: O arquivo não existe em {full_path}")
-                else:
-                    print(f"SUCESSO: Imagem salva corretamente em {full_path}")
-                    
-            messages.success(self.request, 'Notícia criada com sucesso!')
-            return response
-        except Exception as e:
-            import traceback
-            print(f"ERRO AO SALVAR: {str(e)}")
-            print(traceback.format_exc())
-            messages.error(self.request, f"Erro ao salvar notícia: {str(e)}")
-            return self.render_to_response(self.get_context_data(form=form))
-    
-    def form_invalid(self, form):
-        # Debug para verificar os erros de validação do formulário
-        print(f"Erros no formulário: {form.errors}")
-        messages.error(self.request, 'Erro ao criar notícia. Por favor, verifique os campos.')
-        return super().form_invalid(form)
 
 class NewsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """View for updating news articles."""
     model = News
     form_class = NewsForm
     template_name = 'news/admin/news_form.html'
+    success_url = reverse_lazy('news:admin_dashboard')
     
     def test_func(self):
         news = self.get_object()
         return self.request.user == news.author or self.request.user.is_staff
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Notícia atualizada com sucesso!')
+        return super().form_valid(form)
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -350,6 +316,14 @@ class NewsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         self.object = self.get_object()  # Importante definir o objeto atual
         form = self.get_form()
         
+        # Log para depuração
+        if 'featured_image' in request.FILES:
+            image = request.FILES['featured_image']
+            print("--- DEBUG UPLOAD DE IMAGEM (EDIÇÃO) ---")
+            print(f"Nome do arquivo: {image.name}")
+            print(f"Tamanho: {image.size} bytes")
+            print(f"Tipo de conteúdo: {image.content_type}")
+        
         # Verifica se uma nova imagem foi fornecida
         if not request.FILES.get('featured_image') and self.object.featured_image:
             # Se não houver nova imagem e já existir uma, mantenha a imagem atual
@@ -357,14 +331,10 @@ class NewsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             # Remova erros de validação relacionados à imagem
             if 'featured_image' in form.errors:
                 del form.errors['featured_image']
-                
-        # Verifica se o formulário é válido
+        
         if form.is_valid():
-            form.instance.author = self.request.user
-            messages.success(self.request, 'Notícia atualizada com sucesso!')
-            return super().form_valid(form)
+            return self.form_valid(form)
         else:
-            print(f"Erros de validação do formulário: {form.errors}")
             return self.form_invalid(form)
 
 class NewsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):

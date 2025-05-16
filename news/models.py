@@ -83,11 +83,14 @@ class News(models.Model):
     title = models.CharField('Título', max_length=200)
     slug = models.SlugField('Slug', max_length=200, unique_for_date='publish_date')
     author = models.ForeignKey(User, verbose_name='Autor', on_delete=models.CASCADE, related_name='news_articles')
-    content = RichTextUploadingField('Conteúdo')
+    content = RichTextUploadingField('Conteúdo', max_length=10000)
     featured_image = models.ImageField(
         'Imagem Destacada',
         upload_to=news_image_upload_path,
-        max_length=255
+        max_length=255,
+        blank=False,
+        null=False,
+        help_text='Obrigatório: Adicione uma imagem para a notícia'
     )
     category = models.ForeignKey(Category, verbose_name='Categoria', on_delete=models.CASCADE)
     tags = TaggableManager('Tags')
@@ -111,20 +114,20 @@ class News(models.Model):
         return self.title
     
     def save(self, *args, **kwargs):
-        # Garantir que o slug seja criado a partir do título
-        if not self.slug:
-            self.slug = slugify(self.title)
-            # Verificar se já existe outro objeto com o mesmo slug na mesma data
-            counter = 1
-            slug_original = self.slug
-            while News.objects.filter(
-                slug=self.slug,
-                publish_date__year=self.publish_date.year,
-                publish_date__month=self.publish_date.month,
-                publish_date__day=self.publish_date.day
-            ).exclude(pk=self.pk).exists():
-                self.slug = f"{slug_original}-{counter}"
-                counter += 1
+        # Sempre gerar o slug a partir do título para evitar erros
+        self.slug = slugify(self.title)
+        
+        # Verificar se já existe outro objeto com o mesmo slug na mesma data
+        counter = 1
+        slug_original = self.slug
+        while News.objects.filter(
+            slug=self.slug,
+            publish_date__year=self.publish_date.year,
+            publish_date__month=self.publish_date.month,
+            publish_date__day=self.publish_date.day
+        ).exclude(pk=self.pk).exists():
+            self.slug = f"{slug_original}-{counter}"
+            counter += 1
         
         # Generate summary if not provided
         if not self.summary and self.content:
