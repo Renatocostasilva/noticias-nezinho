@@ -5,8 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse_lazy, reverse
 from django.db.models import Count, Q, Sum
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
+from django.utils.decorators import method_decorator
 from django.contrib import messages
 from hitcount.views import HitCountDetailView
 import feedparser
@@ -264,6 +266,7 @@ def newsletter_signup(request):
     return JsonResponse({'success': False, 'errors': form.errors})
 
 # Admin views for news management
+@method_decorator(never_cache, name='dispatch')
 class NewsCreateView(LoginRequiredMixin, CreateView):
     """View for creating news articles."""
     model = News
@@ -301,6 +304,7 @@ class NewsCreateView(LoginRequiredMixin, CreateView):
         else:
             return self.form_invalid(form)
 
+@method_decorator(never_cache, name='dispatch')
 class NewsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """View for updating news articles."""
     model = News
@@ -350,6 +354,7 @@ class NewsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         else:
             return self.form_invalid(form)
 
+@method_decorator(never_cache, name='dispatch')
 class NewsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """View for deleting news articles."""
     model = News
@@ -362,23 +367,44 @@ class NewsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     
     def delete(self, request, *args, **kwargs):
         """Sobrescrever o método delete para limpar o cache quando uma notícia é excluída."""
-        # Obter o objeto antes de excluí-lo
-        self.object = self.get_object()
-        
-        # Chamar o método delete original para excluir o objeto
-        response = super().delete(request, *args, **kwargs)
-        
-        # Limpar o cache
-        clear_news_cache()
-        
-        # Adicionar mensagem de sucesso
-        messages.success(request, 'Notícia excluída com sucesso!')
-        
-        return response
+        try:
+            # Obter o objeto antes de excluí-lo
+            self.object = self.get_object()
+            
+            # Identificador para mensagem de log
+            news_id = self.object.id
+            news_title = self.object.title
+            
+            # Chamar o método delete original para excluir o objeto
+            response = super().delete(request, *args, **kwargs)
+            
+            # Limpar o cache
+            clear_news_cache()
+            
+            # Log para depuração
+            print(f"Notícia excluída com sucesso: ID={news_id}, Título={news_title}")
+            
+            # Adicionar mensagem de sucesso
+            messages.success(request, 'Notícia excluída com sucesso!')
+            
+            # Redirecionar para o dashboard com parâmetro de timestamp para evitar cache
+            timestamp = datetime.now().timestamp()
+            return redirect(f"{self.success_url}?t={timestamp}")
+            
+        except Exception as e:
+            # Log detalhado do erro
+            print(f"Erro ao excluir notícia: {str(e)}")
+            messages.error(request, f"Erro ao excluir notícia: {str(e)}")
+            return redirect('news:admin_dashboard')
 
+@never_cache
 @login_required
 def admin_dashboard(request):
     """View for the admin dashboard."""
+    # Forçar atualização do cache
+    clear_news_cache()
+    
+    # Buscar notícias atualizadas diretamente do banco de dados
     user_news = News.objects.filter(author=request.user).order_by('-created_date')
     
     context = {
@@ -386,13 +412,20 @@ def admin_dashboard(request):
         'draft_count': user_news.filter(status='draft').count(),
         'recent_news': user_news[:10],
         'categories': Category.objects.annotate(news_count=Count('news')),
+        # Adicionar um timestamp para evitar o caching do navegador
+        'timestamp': datetime.now().timestamp(),
     }
     
     return render(request, 'news/admin/dashboard.html', context)
 
+@never_cache
 @login_required
 def news_admin(request):
     """Alternative view for the admin dashboard."""
+    # Forçar atualização do cache
+    clear_news_cache()
+    
+    # Buscar notícias atualizadas diretamente do banco de dados
     user_news = News.objects.filter(author=request.user).order_by('-created_date')
     
     context = {
@@ -400,6 +433,8 @@ def news_admin(request):
         'draft_count': user_news.filter(status='draft').count(),
         'recent_news': user_news[:10],
         'categories': Category.objects.annotate(news_count=Count('news')),
+        # Adicionar um timestamp para evitar o caching do navegador
+        'timestamp': datetime.now().timestamp(),
     }
     
     return render(request, 'news/admin/dashboard.html', context)
