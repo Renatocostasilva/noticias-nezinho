@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load news_tags %}
+
+{% block title %}{{ news.title }} - Notícias{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Conteúdo Principal -->
+        <div class="col-lg-8">
+            <!-- Informações da Notícia -->
+            <div class="news-header mb-4">
+                <h1 class="news-title mb-3">{{ news.title }}</h1>
+                <div class="news-meta d-flex flex-wrap align-items-center mb-2">
+                    <span class="me-3">
+                        <i class="fas fa-user me-1"></i> {{ news.author.get_full_name|default:news.author.username }}
+                    </span>
+                    <span class="me-3">
+                        <i class="fas fa-calendar-alt me-1"></i> {{ news.publish_date|date:"d/m/Y" }}
+                    </span>
+                    <span class="me-3">
+                        <i class="fas fa-folder me-1"></i> 
+                        <a href="{{ news.category.get_absolute_url }}" class="text-decoration-none">
+                            {{ news.category.name }}
+                        </a>
+                    </span>
+                    <span>
+                        <i class="fas fa-eye me-1"></i> {{ news.hit_count.hits }} visualizações
+                    </span>
+                </div>
+                {% if news.tags.all %}
+                <div class="news-tags mb-3">
+                    {% for tag in news.tags.all %}
+                    <a href="#" class="badge bg-secondary text-decoration-none">{{ tag.name }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Depuração -->
+            {% if user.is_staff %}
+            <div class="alert alert-info mb-3">
+                <h6 class="mb-1">Informações de depuração (apenas staff):</h6>
+                <ul class="mb-0 small">
+                    <li>ID da notícia: {{ news.id }}</li>
+                    <li>Status da imagem: 
+                        {% if news.featured_image %}
+                            Existe - {{ news.featured_image.name }}
+                        {% else %}
+                            Não existe
+                        {% endif %}
+                    </li>
+                    <li>URL da imagem (se existir): 
+                        {% if news.featured_image and news.featured_image.name %}
+                            {% comment %}Usando try/except para evitar erros de acesso{% endcomment %}
+                            {% try %}
+                                {{ news.featured_image.url }}
+                            {% except %}
+                                [Erro ao acessar URL]
+                            {% endtry %}
+                        {% else %}
+                            Indisponível
+                        {% endif %}
+                    </li>
+                    <li>URL segura: {{ news.featured_image|image_url_safe }}</li>
+                    <li>Arquivo físico:
+                        {% if news.featured_image and news.featured_image.path %}
+                            {% with file_path=news.featured_image.path %}
+                                {% try %}
+                                    {% if file_path|file_exists %}
+                                        Arquivo existe em {{ file_path }}
+                                    {% else %}
+                                        Arquivo não existe
+                                    {% endif %}
+                                {% except %}
+                                    Não foi possível verificar
+                                {% endtry %}
+                            {% endwith %}
+                        {% else %}
+                            Não definido
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- Imagem principal da notícia -->
+            <div class="news-featured-image mb-4">
+                {% if news.featured_image and news.featured_image.name %}
+                    <img src="{{ news.featured_image|image_url_safe }}" class="img-fluid rounded" alt="{{ news.title }}">
+                {% else %}
+                    <div class="bg-light text-center py-5 rounded">
+                        <i class="fas fa-newspaper fa-4x text-secondary mb-3"></i>
+                        <p class="text-muted">Imagem não disponível</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Conteúdo da Notícia -->
+            <div class="news-content mb-5">
+                {{ news.content|safe }}
+            </div>
+            
+            <!-- Compartilhamento -->
+            <div class="news-share mb-5">
+                <h5 class="mb-3">Compartilhe:</h5>
+                <div class="d-flex">
+                    <a href="#" class="btn btn-outline-primary me-2">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-info me-2">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-success me-2">
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Notícias Relacionadas -->
+            <div class="related-news mb-5">
+                <h4 class="mb-4">Notícias Relacionadas</h4>
+                <div class="row">
+                    {% for related in related_news %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            {% if related.featured_image and related.featured_image.name %}
+                                <img src="{{ related.featured_image|image_url_safe }}" class="card-img-top" alt="{{ related.title }}">
+                            {% else %}
+                                <div class="bg-light text-center p-3">
+                                    <i class="fas fa-image text-secondary fa-2x"></i>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ related.title }}</h5>
+                                <p class="card-text small">{{ related.summary|truncatewords:20 }}</p>
+                                <a href="{{ related.get_absolute_url }}" class="btn btn-sm btn-primary">Ler mais</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <p class="text-muted">Não há notícias relacionadas no momento.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Comentários -->
+            <div class="comments-section">
+                <h4 class="mb-4">Comentários ({{ comments.count }})</h4>
+                
+                <!-- Formulário de Comentário -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Deixe seu comentário</h5>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="{{ comment_form.name.id_for_label }}" class="form-label">Nome</label>
+                                {{ comment_form.name }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ comment_form.email.id_for_label }}" class="form-label">Email</label>
+                                {{ comment_form.email }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ comment_form.content.id_for_label }}" class="form-label">Comentário</label>
+                                {{ comment_form.content }}
+                            </div>
+                            <button type="submit" class="btn btn-primary">Enviar Comentário</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Lista de Comentários -->
+                {% if comments %}
+                <div class="comments-list">
+                    {% for comment in comments %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="card-subtitle mb-0">{{ comment.name }}</h6>
+                                <small class="text-muted">{{ comment.created_date|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            <p class="card-text">{{ comment.content }}</p>
+                            
+                            <!-- Respostas ao comentário -->
+                            {% if comment.replies.all %}
+                            <div class="replies mt-3">
+                                {% for reply in comment.replies.all %}
+                                <div class="card mb-2">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <h6 class="card-subtitle mb-0 small">{{ reply.name }}</h6>
+                                            <small class="text-muted">{{ reply.created_date|date:"d/m/Y H:i" }}</small>
+                                        </div>
+                                        <p class="card-text small mb-0">{{ reply.content }}</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Botão para responder -->
+                            <button class="btn btn-sm btn-outline-secondary mt-2 reply-btn" 
+                                    data-comment-id="{{ comment.id }}">
+                                Responder
+                            </button>
+                            
+                            <!-- Formulário de resposta (inicialmente oculto) -->
+                            <div class="reply-form mt-3" id="reply-form-{{ comment.id }}" style="display: none;">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                                    <div class="mb-2">
+                                        <label for="reply-name-{{ comment.id }}" class="form-label">Nome</label>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               id="reply-name-{{ comment.id }}" name="name" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="reply-email-{{ comment.id }}" class="form-label">Email</label>
+                                        <input type="email" class="form-control form-control-sm" 
+                                               id="reply-email-{{ comment.id }}" name="email" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="reply-content-{{ comment.id }}" class="form-label">Resposta</label>
+                                        <textarea class="form-control form-control-sm" 
+                                                  id="reply-content-{{ comment.id }}" name="content" 
+                                                  rows="2" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary">Enviar Resposta</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary cancel-reply"
+                                            data-comment-id="{{ comment.id }}">Cancelar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Seja o primeiro a comentar!</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Widget de Pesquisa -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="sidebar-title">Pesquisar</h5>
+                    <form action="{% url 'news:search_results' %}" method="get">
+                        <div class="input-group">
+                            {{ search_form.q }}
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Widget de Categorias -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="sidebar-title">Categorias</h5>
+                    <ul class="list-group list-group-flush">
+                        {% for category in categories %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="{{ category.get_absolute_url }}" class="text-decoration-none">
+                                {{ category.name }}
+                            </a>
+                            <span class="badge bg-primary rounded-pill">{{ category.get_news_count }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Widget de Notícias Populares -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="sidebar-title">Mais Populares</h5>
+                    {% for popular_news in trending_news|slice:":5" %}
+                    <div class="media mb-3 border-bottom pb-3">
+                        <div class="row g-0">
+                            <div class="col-3">
+                                {% if popular_news.featured_image and popular_news.featured_image.name %}
+                                    <img src="{{ popular_news.featured_image|image_url_safe }}" class="img-fluid rounded" alt="{{ popular_news.title }}">
+                                {% else %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 50px;">
+                                        <i class="fas fa-image text-secondary"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-9">
+                                <div class="ms-3">
+                                    <h6 class="mt-0">
+                                        <a href="{{ popular_news.get_absolute_url }}" class="text-decoration-none">
+                                            {{ popular_news.title|truncatechars:60 }}
+                                        </a>
+                                    </h6>
+                                    <small class="text-muted">{{ popular_news.publish_date|date:"d/m/Y" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">Não há notícias populares no momento.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mostrar/Ocultar formulários de resposta
+        const replyButtons = document.querySelectorAll('.reply-btn');
+        const cancelButtons = document.querySelectorAll('.cancel-reply');
+        
+        replyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.dataset.commentId;
+                document.getElementById('reply-form-' + commentId).style.display = 'block';
+                this.style.display = 'none';
+            });
+        });
+        
+        cancelButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.dataset.commentId;
+                document.getElementById('reply-form-' + commentId).style.display = 'none';
+                document.querySelector(`.reply-btn[data-comment-id="${commentId}"]`).style.display = 'inline-block';
+            });
+        });
+    });
+</script>
+{% endblock %} 

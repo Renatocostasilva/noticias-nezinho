@@ -34,9 +34,12 @@
                     <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-key me-2"></i> Alterar Senha
                     </a>
-                    <a href="{% url 'accounts:logout' %}" class="list-group-item list-group-item-action text-danger">
-                        <i class="fas fa-sign-out-alt me-2"></i> Sair
-                    </a>
+                    <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="list-group-item list-group-item-action text-danger border-0 w-100 text-start">
+                            <i class="fas fa-sign-out-alt me-2"></i> Sair
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
