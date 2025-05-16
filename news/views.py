@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse_lazy, reverse
 from django.db.models import Count, Q, Sum
@@ -14,11 +14,12 @@ from hitcount.views import HitCountDetailView
 import feedparser
 from datetime import datetime, timedelta
 import time
-from .models import News, Category, Comment, Newsletter, Partner, ConsultationRequest, RSSFeed
+from .models import News, Category, Comment, Newsletter, Partner, ConsultationRequest, RSSFeed, SiteConfiguration
 from .forms import NewsForm, CommentForm, NewsletterForm, SearchForm, PartnerForm, ConsultationRequestForm, RSSFeedForm
 from classifieds.models import Ad  # Importar o modelo de anúncios
 import random
 from django.core.cache import cache
+from django import forms
 
 def clear_news_cache():
     """Função auxiliar para limpar o cache de notícias."""
@@ -407,11 +408,18 @@ def admin_dashboard(request):
     # Buscar notícias atualizadas diretamente do banco de dados
     user_news = News.objects.filter(author=request.user).order_by('-created_date')
     
+    # Contar parceiros e anúncios para o menu lateral
+    total_partners = Partner.objects.count()
+    total_ads = Ad.objects.count()
+    
     context = {
         'published_count': user_news.filter(status='published').count(),
         'draft_count': user_news.filter(status='draft').count(),
         'recent_news': user_news[:10],
         'categories': Category.objects.annotate(news_count=Count('news')),
+        'total_partners': total_partners,
+        'total_ads': total_ads,
+        'total_news': News.objects.count(),
         # Adicionar um timestamp para evitar o caching do navegador
         'timestamp': datetime.now().timestamp(),
     }
@@ -428,11 +436,18 @@ def news_admin(request):
     # Buscar notícias atualizadas diretamente do banco de dados
     user_news = News.objects.filter(author=request.user).order_by('-created_date')
     
+    # Contar parceiros e anúncios para o menu lateral
+    total_partners = Partner.objects.count()
+    total_ads = Ad.objects.count()
+    
     context = {
         'published_count': user_news.filter(status='published').count(),
         'draft_count': user_news.filter(status='draft').count(),
         'recent_news': user_news[:10],
         'categories': Category.objects.annotate(news_count=Count('news')),
+        'total_partners': total_partners,
+        'total_ads': total_ads,
+        'total_news': News.objects.count(),
         # Adicionar um timestamp para evitar o caching do navegador
         'timestamp': datetime.now().timestamp(),
     }
@@ -673,4 +688,34 @@ def refresh_all_rss_feeds(request):
     result = atualizar_feeds_rss.delay()
     
     messages.success(request, 'Todos os feeds RSS estão sendo atualizados em segundo plano.')
-    return redirect('news:rss_feed_list') 
+    return redirect('news:rss_feed_list')
+
+class SiteConfigForm(forms.ModelForm):
+    class Meta:
+        model = SiteConfiguration
+        fields = ['site_name', 'site_logo', 'footer_text']
+        widgets = {
+            'footer_text': forms.Textarea(attrs={'rows': 3}),
+        }
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+@never_cache
+def site_config_edit(request):
+    """
+    View para editar as configurações do site, incluindo a logo.
+    """
+    config = SiteConfiguration.get_solo()
+    form = SiteConfigForm(instance=config)
+    
+    if request.method == 'POST':
+        form = SiteConfigForm(request.POST, request.FILES, instance=config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Configurações do site atualizadas com sucesso.")
+            return redirect('news:site_config_edit')
+    
+    return render(request, 'news/admin/site_config_form.html', {
+        'form': form,
+        'config': config,
+    }) 

@@ -32,6 +32,29 @@
                     <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-key me-2"></i> Alterar Senha
                     </a>
+                    <div class="list-group mb-4">
+                        <div class="list-group-item bg-primary text-white">
+                            <i class="fas fa-cogs me-2"></i> Administração
+                        </div>
+                        <a href="{% url 'news:news_admin' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-newspaper me-2"></i> Gerenciar Notícias</span>
+                            <span class="badge bg-primary rounded-pill">{{ total_news }}</span>
+                        </a>
+                        <a href="{% url 'news:partner_admin' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-handshake me-2"></i> Gerenciar Parceiros</span>
+                            <span class="badge bg-primary rounded-pill">{{ total_partners }}</span>
+                        </a>
+                        <a href="{% url 'classifieds:admin_dashboard' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-bullhorn me-2"></i> Gerenciar Classificados</span>
+                            <span class="badge bg-primary rounded-pill">{{ total_ads }}</span>
+                        </a>
+                        <a href="{% url 'news:rss_feed_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-rss me-2"></i> Gerenciar Feeds RSS
+                        </a>
+                        <a href="{% url 'news:site_config_edit' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog me-2"></i> Configurações do Site
+                        </a>
+                    </div>
                     <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
                         {% csrf_token %}
                         <button type="submit" class="list-group-item list-group-item-action text-danger border-0 w-100 text-start">

@@ -279,4 +279,23 @@ class RSSFeed(models.Model):
         ordering = ['order', 'name']
     
     def __str__(self):
-        return self.name 
+        return self.name
+
+class SiteConfiguration(models.Model):
+    site_logo = models.ImageField(upload_to='site/', verbose_name="Logo do Site", null=True, blank=True)
+    site_name = models.CharField(max_length=100, default="Tribuna do Vale do São Francisco", verbose_name="Nome do Site")
+    footer_text = models.TextField(blank=True, verbose_name="Texto do Rodapé")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuração do Site"
+        verbose_name_plural = "Configurações do Site"
+
+    @classmethod
+    def get_solo(cls):
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return self.site_name 
