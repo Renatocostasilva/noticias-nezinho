@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load news_tags %}
 
 {% block title %}Parceiros - Notícias{% endblock %}
 
@@ -17,7 +18,19 @@
             <div class="card h-100 shadow-sm">
                 <div class="row g-0">
                     <div class="col-md-4">
-                        <img src="{{ partner.photo.url }}" class="img-fluid rounded-start" alt="{{ partner.name }}" style="height: 100%; object-fit: cover;">
+                        {% try %}
+                            {% if partner.photo and partner.photo.name %}
+                            <img src="{{ partner.photo.url }}" class="img-fluid rounded-start" alt="{{ partner.name }}" style="height: 100%; object-fit: cover;">
+                            {% else %}
+                            <div class="bg-light h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-user-md fa-3x text-secondary"></i>
+                            </div>
+                            {% endif %}
+                        {% except %}
+                            <div class="bg-light h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-exclamation-circle fa-3x text-warning"></i>
+                            </div>
+                        {% endtry %}
                     </div>
                     <div class="col-md-8">
                         <div class="card-body">

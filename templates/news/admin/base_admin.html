@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Painel Administrativo - Notícias{% endblock %}
+
+{% block extra_head %}
+<!-- Meta tags para evitar cache do navegador -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Painel de Administração</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'news:news_admin' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'news_admin' %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a href="{% url 'news:news_create' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'news_create' %}active{% endif %}">
+                        <i class="fas fa-plus me-2"></i> Nova Notícia
+                    </a>
+                    <a href="{% url 'news:partner_admin' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'partner_admin' %}active{% endif %}">
+                        <i class="fas fa-handshake me-2"></i> Parceiros
+                    </a>
+                    <a href="{% url 'classifieds:admin_dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'admin_dashboard' and request.resolver_match.namespace == 'classifieds' %}active{% endif %}">
+                        <i class="fas fa-bullhorn me-2"></i> Classificados
+                    </a>
+                    <a href="{% url 'news:rss_feed_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'rss_feed_list' %}active{% endif %}">
+                        <i class="fas fa-rss me-2"></i> Feeds RSS
+                    </a>
+                    <a href="{% url 'news:site_config_edit' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'site_config_edit' %}active{% endif %}">
+                        <i class="fas fa-cog me-2"></i> Configurações do Site
+                    </a>
+                    <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                        <i class="fas fa-user me-2"></i> Meu Perfil
+                    </a>
+                    <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'password_change' %}active{% endif %}">
+                        <i class="fas fa-key me-2"></i> Alterar Senha
+                    </a>
+                    <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="list-group-item list-group-item-action text-danger border-0 w-100 text-start">
+                            <i class="fas fa-sign-out-alt me-2"></i> Sair
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

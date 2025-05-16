@@ -52,4 +52,5 @@ urlpatterns = [
     path('news-admin/rss-feeds/excluir/<int:pk>/', views.RSSFeedDeleteView.as_view(), name='rss_feed_delete'),
     path('news-admin/rss-feeds/atualizar/<int:pk>/', views.rss_feed_refresh, name='rss_feed_refresh'),
     path('news-admin/rss-feeds/atualizar-todos/', views.refresh_all_rss_feeds, name='refresh_all_rss_feeds'),
+    path('news-admin/site-config/', views.site_config_edit, name='site_config_edit'),
 ] 

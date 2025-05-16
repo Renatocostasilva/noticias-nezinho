@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load news_tags %}
+
+{% block title %}Notícias - Informação de qualidade{% endblock %}
+
+{% block content %}
+<!-- ... existing code ... -->
+
+<!-- Destaques do Slider -->
+{% if slider_news %}
+<div class="container-fluid">
+    <div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            {% for article in slider_news %}
+            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
+            {% endfor %}
+        </div>
+        <div class="carousel-inner">
+            {% for article in slider_news %}
+            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                <div class="overlay-image">
+                    {% try %}
+                        {% if article.featured_image and article.featured_image.name %}
+                        <img src="{{ article.featured_image.url }}" class="d-block w-100" alt="{{ article.title }}">
+                        {% else %}
+                        <div class="bg-secondary" style="height: 500px;"></div>
+                        {% endif %}
+                    {% except %}
+                        <div class="bg-secondary" style="height: 500px;"></div>
+                    {% endtry %}
+                </div>
+                <div class="carousel-caption d-none d-md-block">
+                    <span class="badge" style="background-color: {{ article.category.color }}">{{ article.category.name }}</span>
+                    <h2><a href="{{ article.get_absolute_url }}" class="text-white text-decoration-none">{{ article.title }}</a></h2>
+                    <p class="d-none d-lg-block">{{ article.summary|default:article.content|striptags|truncatewords:25 }}</p>
+                    <div class="carousel-meta text-white">
+                        <span><i class="fas fa-user me-1"></i> {{ article.author.get_full_name|default:article.author.username }}</span>
+                        <span class="ms-3"><i class="fas fa-calendar-alt me-1"></i> {{ article.publish_date|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Próximo</span>
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<div class="container">
+    <!-- Notícias em Destaque -->
+    {% if featured_news %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="section-title">Destaques</h2>
+        </div>
+        {% for article in featured_news %}
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                {% try %}
+                    {% if article.featured_image and article.featured_image.name %}
+                    <img src="{{ article.featured_image.url }}" class="card-img-top" alt="{{ article.title }}">
+                    {% else %}
+                    <div class="bg-light text-center p-3">
+                        <i class="fas fa-image text-secondary fa-3x py-4"></i>
+                    </div>
+                    {% endif %}
+                {% except %}
+                    <div class="bg-light text-center p-3">
+                        <i class="fas fa-exclamation-circle text-warning fa-3x py-4"></i>
+                    </div>
+                {% endtry %}
+                <div class="card-body d-flex flex-column">
+                    <span class="badge mb-1" style="background-color: {{ article.category.color }}">{{ article.category.name }}</span>
+                    <h5 class="card-title">{{ article.title }}</h5>
+                    <p class="card-text">{{ article.summary|default:article.content|striptags|truncatewords:15 }}</p>
+                    <div class="card-meta text-muted mb-2 small">
+                        <span><i class="fas fa-user me-1"></i> {{ article.author.get_full_name|default:article.author.username }}</span>
+                        <span class="ms-2"><i class="fas fa-calendar-alt me-1"></i> {{ article.publish_date|date:"d/m/Y" }}</span>
+                    </div>
+                    <a href="{{ article.get_absolute_url }}" class="btn btn-sm btn-outline-primary mt-auto">Leia mais</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Conteúdo Principal -->
+        <div class="col-lg-8">
+            <!-- Notícias Mais Recentes -->
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="section-title">Últimas Notícias</h2>
+                </div>
+                
+                {% for article in latest_news %}
+                <div class="col-12 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="row g-0">
+                            <div class="col-md-4">
+                                {% try %}
+                                    {% if article.featured_image and article.featured_image.name %}
+                                    <img src="{{ article.featured_image.url }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="{{ article.title }}">
+                                    {% else %}
+                                    <div class="bg-light text-center p-4 h-100 d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-image text-secondary fa-3x"></i>
+                                    </div>
+                                    {% endif %}
+                                {% except %}
+                                    <div class="bg-light text-center p-4 h-100 d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-exclamation-circle text-warning fa-3x"></i>
+                                    </div>
+                                {% endtry %}
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <span class="badge mb-1" style="background-color: {{ article.category.color }}">{{ article.category.name }}</span>
+                                    <h5 class="card-title">{{ article.title }}</h5>
+                                    <p class="card-text">{{ article.summary|default:article.content|striptags|truncatewords:25 }}</p>
+                                    <div class="card-meta text-muted mb-2 small">
+                                        <span><i class="fas fa-user me-1"></i> {{ article.author.get_full_name|default:article.author.username }}</span>
+                                        <span class="ms-2"><i class="fas fa-calendar-alt me-1"></i> {{ article.publish_date|date:"d/m/Y" }}</span>
+                                        <span class="ms-2"><i class="fas fa-comment me-1"></i> {{ article.comments.count }}</span>
+                                    </div>
+                                    <a href="{{ article.get_absolute_url }}" class="btn btn-sm btn-outline-primary">Leia mais</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <p class="text-muted">Não há notícias disponíveis no momento.</p>
+                </div>
+                {% endfor %}
+                
+                <!-- Paginação -->
+                {% if latest_news.has_other_pages %}
+                <div class="col-12">
+                    <nav aria-label="Paginação de notícias">
+                        <ul class="pagination justify-content-center">
+                            {% if latest_news.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1" aria-label="Primeira">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ latest_news.previous_page_number }}" aria-label="Anterior">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;&laquo;</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for i in latest_news.paginator.page_range %}
+                                {% if latest_news.number == i %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ i }}</span>
+                                </li>
+                                {% elif i > latest_news.number|add:'-3' and i < latest_news.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if latest_news.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ latest_news.next_page_number }}" aria-label="Próxima">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ latest_news.paginator.num_pages }}" aria-label="Última">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;&raquo;</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Widget de Pesquisa -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="sidebar-title">Pesquisar</h5>
+                    <form action="{% url 'news:search_results' %}" method="get">
+                        <div class="input-group">
+                            {{ search_form.q }}
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Widget de Categorias -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="sidebar-title">Categorias</h5>
+                    <ul class="list-group list-group-flush">
+                        {% for category in categories %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center ps-0 pe-0 border-0">
+                            <a href="{{ category.get_absolute_url }}" class="category-link" style="border-left: 4px solid {{ category.color }};">
+                                {{ category.name }}
+                            </a>
+                            <span class="badge rounded-pill" style="background-color: {{ category.color }}">{{ category.get_news_count }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Widget de Feed RSS -->
+            {% if rss_news %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="sidebar-title">RSS Feeds</h5>
+                    {% for item in rss_news|slice:":10" %}
+                    <div class="rss-item mb-3">
+                        <h6 class="mb-1">
+                            <a href="{{ item.link }}" target="_blank" class="text-decoration-none">{{ item.title }}</a>
+                        </h6>
+                        <div class="small text-muted">
+                            <i class="fas fa-rss me-1"></i> {{ item.source.name }} | {{ item.pub_date|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <a href="{% url 'news:rss_feeds' %}" class="btn btn-sm btn-outline-secondary w-100">Ver todos os feeds</a>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Widget de Notícias Populares -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="sidebar-title">Mais Populares</h5>
+                    {% for popular in trending_news %}
+                    <div class="media mb-3 pb-3 border-bottom">
+                        <div class="row">
+                            <div class="col-4">
+                                {% try %}
+                                    {% if popular.featured_image and popular.featured_image.name %}
+                                    <img src="{{ popular.featured_image.url }}" class="img-fluid rounded" alt="{{ popular.title }}">
+                                    {% else %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 60px;">
+                                        <i class="fas fa-image text-secondary"></i>
+                                    </div>
+                                    {% endif %}
+                                {% except %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 60px;">
+                                        <i class="fas fa-exclamation-circle text-warning"></i>
+                                    </div>
+                                {% endtry %}
+                            </div>
+                            <div class="col-8 ps-0">
+                                <h6 class="mt-0 mb-1">
+                                    <a href="{{ popular.get_absolute_url }}" class="text-decoration-none">{{ popular.title|truncatechars:50 }}</a>
+                                </h6>
+                                <div class="small text-muted">
+                                    <i class="fas fa-eye me-1"></i> {{ popular.hit_count.hits }} views
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Widget de Parceiros -->
+            {% if partners %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="sidebar-title">Parceiros</h5>
+                    <p class="text-muted small">Conheça nossos parceiros e agende uma consulta personalizada.</p>
+                    <div class="row">
+                        {% for partner in partners|slice:":6" %}
+                        <div class="col-6 col-md-4 col-lg-6 mb-3">
+                            <div class="card partner-card border-0 h-100">
+                                <a href="{{ partner.get_absolute_url }}" class="text-decoration-none">
+                                    {% try %}
+                                        {% if partner.photo and partner.photo.name %}
+                                        <img src="{{ partner.photo.url }}" class="card-img-top partner-photo" alt="{{ partner.name }}">
+                                        {% else %}
+                                        <div class="bg-light text-center p-2">
+                                            <i class="fas fa-user-md fa-2x text-secondary"></i>
+                                        </div>
+                                        {% endif %}
+                                    {% except %}
+                                        <div class="bg-light text-center p-2">
+                                            <i class="fas fa-exclamation-circle text-warning fa-2x"></i>
+                                        </div>
+                                    {% endtry %}
+                                    <div class="card-body p-2 text-center">
+                                        <h6 class="card-title mb-0 small">{{ partner.name }}</h6>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <a href="{% url 'news:partner_list' %}" class="btn btn-sm btn-outline-secondary w-100">Ver todos os parceiros</a>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Anúncios -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-3 small">PUBLICIDADE</h6>
+                    <a href="{% url 'classifieds:classifieds_home' %}" class="text-decoration-none">
+                        <img src="{% static 'images/advertisement.jpg' %}" class="img-fluid rounded" alt="Anúncio">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

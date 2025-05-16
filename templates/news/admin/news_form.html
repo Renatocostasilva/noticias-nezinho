@@ -6,6 +6,27 @@
     {% if form.instance.pk %}Editar Notícia{% else %}Nova Notícia{% endif %} - Notícias
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    .error-feedback {
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
+    }
+    
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+    
+    /* Estilo para o editor quando há erro */
+    .field-error .django-ckeditor-widget {
+        border: 1px solid #dc3545;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
 {% block extra_head %}
 {{ form.media }}
 {% endblock %}
@@ -32,9 +53,12 @@
                     <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-key me-2"></i> Alterar Senha
                     </a>
-                    <a href="{% url 'accounts:logout' %}" class="list-group-item list-group-item-action text-danger">
-                        <i class="fas fa-sign-out-alt me-2"></i> Sair
-                    </a>
+                    <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="list-group-item list-group-item-action text-danger border-0 w-100 text-start">
+                            <i class="fas fa-sign-out-alt me-2"></i> Sair
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -52,19 +76,56 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    <!-- Exibe os erros gerais do formulário -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-circle"></i> Por favor, corrija os erros indicados abaixo:</h5>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         
                         <div class="row">
                             <div class="col-md-8">
-                                {{ form.title|as_crispy_field }}
-                                <!-- Renderizando o campo slug manualmente -->
-                                <div class="mb-3">
-                                    <label for="{{ form.slug.id_for_label }}" class="form-label">Slug</label>
-                                    <input type="text" name="{{ form.slug.html_name }}" id="{{ form.slug.id_for_label }}" class="form-control" value="{{ form.slug.value|default:'' }}" placeholder="Digite o slug (opcional)">
-                                    <div class="form-text">Nome amigável para URL. Deixe em branco para gerar automaticamente a partir do título.</div>
+                                <!-- Título com validação manual -->
+                                <div class="mb-3{% if form.title.errors %} field-error{% endif %}">
+                                    <label for="{{ form.title.id_for_label }}" class="form-label">Título *</label>
+                                    <input type="text" name="{{ form.title.html_name }}" id="{{ form.title.id_for_label }}" 
+                                           class="form-control {% if form.title.errors %}is-invalid{% endif %}" 
+                                           value="{{ form.title.value|default:'' }}" placeholder="Digite o título">
+                                    <small class="form-text text-muted">O URL amigável (slug) será gerado automaticamente a partir do título.</small>
+                                    {% if form.title.errors %}
+                                        <div class="error-feedback">
+                                            {% for error in form.title.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                {{ form.content|as_crispy_field }}
+                                
+                                <!-- Conteúdo com validação manual -->
+                                <div class="mb-3{% if form.content.errors %} field-error{% endif %}">
+                                    <label for="{{ form.content.id_for_label }}" class="form-label">Conteúdo *</label>
+                                    {{ form.content }}
+                                    {% if form.content.errors %}
+                                        <div class="error-feedback">
+                                            {% for error in form.content.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="card mb-3">
@@ -72,8 +133,39 @@
                                         <h6 class="mb-0">Publicação</h6>
                                     </div>
                                     <div class="card-body">
-                                        {{ form.status|as_crispy_field }}
-                                        {{ form.publish_date|as_crispy_field }}
+                                        <!-- Status com validação manual -->
+                                        <div class="mb-3{% if form.status.errors %} field-error{% endif %}">
+                                            <label for="{{ form.status.id_for_label }}" class="form-label">Status *</label>
+                                            <select name="{{ form.status.html_name }}" id="{{ form.status.id_for_label }}" 
+                                                   class="form-select {% if form.status.errors %}is-invalid{% endif %}">
+                                                {% for value, text in form.fields.status.choices %}
+                                                    <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>{{ text }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            {% if form.status.errors %}
+                                                <div class="error-feedback">
+                                                    {% for error in form.status.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Data de publicação com validação manual -->
+                                        <div class="mb-3{% if form.publish_date.errors %} field-error{% endif %}">
+                                            <label for="{{ form.publish_date.id_for_label }}" class="form-label">Data de Publicação *</label>
+                                            <input type="datetime-local" name="{{ form.publish_date.html_name }}" 
+                                                  id="{{ form.publish_date.id_for_label }}" 
+                                                  class="form-control {% if form.publish_date.errors %}is-invalid{% endif %}" 
+                                                  value="{{ form.publish_date.value|date:'Y-m-d\TH:i' }}">
+                                            {% if form.publish_date.errors %}
+                                                <div class="error-feedback">
+                                                    {% for error in form.publish_date.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -82,7 +174,27 @@
                                         <h6 class="mb-0">Categorização</h6>
                                     </div>
                                     <div class="card-body">
-                                        {{ form.category|as_crispy_field }}
+                                        <!-- Categoria com validação manual -->
+                                        <div class="mb-3{% if form.category.errors %} field-error{% endif %}">
+                                            <label for="{{ form.category.id_for_label }}" class="form-label">Categoria *</label>
+                                            <select name="{{ form.category.html_name }}" id="{{ form.category.id_for_label }}" 
+                                                   class="form-select {% if form.category.errors %}is-invalid{% endif %}">
+                                                <option value="">Selecione uma categoria</option>
+                                                {% for value, text in form.fields.category.choices %}
+                                                    {% if value %}
+                                                        <option value="{{ value }}" {% if form.category.value|stringformat:'s' == value|stringformat:'s' %}selected{% endif %}>{{ text }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                            {% if form.category.errors %}
+                                                <div class="error-feedback">
+                                                    {% for error in form.category.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
                                         {{ form.tags|as_crispy_field }}
                                     </div>
                                 </div>
@@ -97,7 +209,27 @@
                                                 <img src="{{ form.instance.featured_image.url }}" class="img-fluid rounded" alt="{{ form.instance.title }}">
                                             </div>
                                         {% endif %}
-                                        {{ form.featured_image|as_crispy_field }}
+                                        
+                                        <!-- Imagem Destacada com validação manual -->
+                                        <div class="mb-3{% if form.featured_image.errors %} field-error{% endif %}">
+                                            <label for="{{ form.featured_image.id_for_label }}" class="form-label">
+                                                Imagem Destacada {% if not form.instance.pk %}*{% endif %}
+                                            </label>
+                                            <input type="file" name="{{ form.featured_image.html_name }}" 
+                                                   id="{{ form.featured_image.id_for_label }}" 
+                                                   class="form-control {% if form.featured_image.errors %}is-invalid{% endif %}" 
+                                                   accept="image/jpeg,image/png,image/jpg">
+                                            {% if form.instance.pk %}
+                                                <div class="form-text">Deixe em branco para manter a imagem atual.</div>
+                                            {% endif %}
+                                            {% if form.featured_image.errors %}
+                                                <div class="error-feedback">
+                                                    {% for error in form.featured_image.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                                 

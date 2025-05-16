@@ -1,84 +1,120 @@
 {% extends 'base.html' %}
+{% load static %}
+{% load news_tags %}
 
 {% block title %}Resultados da Pesquisa: {{ query }} - Notícias{% endblock %}
 
 {% block content %}
-<div class="container my-4">
+<div class="container my-5">
     <div class="row">
-        <div class="col-12 mb-4">
-            <h1 class="news-title">Resultados da Pesquisa: "{{ query }}"</h1>
-            <p class="lead mt-3">{{ news_list.count }} resultado(s) encontrado(s)</p>
-        </div>
-    </div>
-    
-    <div class="row">
-        <!-- Main Content -->
+        <!-- Conteúdo Principal -->
         <div class="col-lg-8">
+            <h1 class="mb-4 news-title">Resultados da Pesquisa: "{{ query }}"</h1>
+            
+            <!-- Estatísticas da Pesquisa -->
+            <div class="alert alert-info mb-4">
+                <p class="mb-0">
+                    {% with total=news_list.paginator.count %}
+                    Encontrados {{ total }} resultado{{ total|pluralize }} para sua pesquisa.
+                    {% endwith %}
+                </p>
+            </div>
+            
+            <!-- Resultados da Pesquisa -->
             {% for news in news_list %}
-            <div class="card mb-4">
+            <div class="card mb-4 border-0 shadow-sm">
                 <div class="row g-0">
                     <div class="col-md-4">
-                        <img src="{{ news.featured_image.url }}" class="img-fluid rounded-start" alt="{{ news.title }}" style="height: 100%; object-fit: cover;">
+                        {% try %}
+                            {% if news.featured_image and news.featured_image.name %}
+                            <img src="{{ news.featured_image.url }}" class="img-fluid rounded-start" alt="{{ news.title }}" style="height: 100%; object-fit: cover;">
+                            {% else %}
+                            <div class="bg-light text-center p-4 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-image text-secondary fa-3x"></i>
+                            </div>
+                            {% endif %}
+                        {% except %}
+                            <div class="bg-light text-center p-4 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-exclamation-circle text-warning fa-3x"></i>
+                            </div>
+                        {% endtry %}
                     </div>
                     <div class="col-md-8">
                         <div class="card-body">
-                            <span class="badge" style="background-color: {{ news.category.color }};">{{ news.category.name }}</span>
-                            <h5 class="card-title mt-2 news-title">
-                                <a href="{{ news.get_absolute_url }}" class="text-decoration-none text-dark">{{ news.title }}</a>
-                            </h5>
-                            <p class="card-text">{{ news.summary|truncatechars:150 }}</p>
-                            <div class="d-flex justify-content-between align-items-center news-meta">
-                                <div>
-                                    <span><i class="far fa-user me-1"></i> {{ news.author.get_full_name|default:news.author.username }}</span>
-                                    <span class="ms-3"><i class="far fa-clock me-1"></i> {{ news.publish_date|date:"d/m/Y" }}</span>
+                            <span class="badge mb-1" style="background-color: {{ news.category.color }}">{{ news.category.name }}</span>
+                            <h5 class="card-title">{{ news.title }}</h5>
+                            <p class="card-text">{{ news.summary|default:news.content|striptags|truncatewords:25 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="news-meta text-muted small">
+                                    <span><i class="fas fa-user me-1"></i> {{ news.author.get_full_name|default:news.author.username }}</span>
+                                    <span class="ms-2"><i class="fas fa-calendar-alt me-1"></i> {{ news.publish_date|date:"d/m/Y" }}</span>
+                                    <span class="ms-2"><i class="fas fa-eye me-1"></i> {{ news.hit_count.hits }} visualizações</span>
                                 </div>
-                                <a href="{{ news.get_absolute_url }}" class="btn btn-sm btn-outline-primary">Leia mais</a>
+                                <a href="{{ news.get_absolute_url }}" class="btn btn-sm btn-primary">Leia mais</a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             {% empty %}
-            <div class="alert alert-info">
-                Nenhum resultado encontrado para "{{ query }}". Tente outra pesquisa.
+            <div class="alert alert-warning">
+                <p class="mb-0">Nenhum resultado encontrado para "{{ query }}". Por favor, tente outro termo de pesquisa.</p>
             </div>
             {% endfor %}
             
-            <!-- Pagination -->
-            {% if is_paginated %}
-            <nav aria-label="Page navigation" class="mt-4">
+            <!-- Paginação -->
+            {% if news_list.has_other_pages %}
+            <nav aria-label="Paginação de resultados">
                 <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
+                    {% if news_list.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?q={{ query }}&page=1" aria-label="First">
+                        <a class="page-link" href="?q={{ query }}&page=1" aria-label="Primeira">
                             <span aria-hidden="true">&laquo;&laquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?q={{ query }}&page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                        <a class="page-link" href="?q={{ query }}&page={{ news_list.previous_page_number }}" aria-label="Anterior">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;&laquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
                     {% endif %}
                     
-                    {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                    <li class="page-item active"><a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a></li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item"><a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a></li>
-                    {% endif %}
+                    {% for i in news_list.paginator.page_range %}
+                        {% if news_list.number == i %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ i }}</span>
+                        </li>
+                        {% elif i > news_list.number|add:'-3' and i < news_list.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?q={{ query }}&page={{ i }}">{{ i }}</a>
+                        </li>
+                        {% endif %}
                     {% endfor %}
                     
-                    {% if page_obj.has_next %}
+                    {% if news_list.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?q={{ query }}&page={{ page_obj.next_page_number }}" aria-label="Next">
+                        <a class="page-link" href="?q={{ query }}&page={{ news_list.next_page_number }}" aria-label="Próxima">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?q={{ query }}&page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                        <a class="page-link" href="?q={{ query }}&page={{ news_list.paginator.num_pages }}" aria-label="Última">
                             <span aria-hidden="true">&raquo;&raquo;</span>
                         </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;&raquo;</span>
                     </li>
                     {% endif %}
                 </ul>
@@ -88,12 +124,10 @@
         
         <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- Search Widget -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-search me-2"></i> Nova Pesquisa</h5>
-                </div>
+            <!-- Widget de Pesquisa -->
+            <div class="card shadow-sm mb-4">
                 <div class="card-body">
+                    <h5 class="sidebar-title">Pesquisar Novamente</h5>
                     <form action="{% url 'news:search_results' %}" method="get">
                         <div class="input-group">
                             {{ search_form.q }}
@@ -105,79 +139,95 @@
                 </div>
             </div>
             
-            <!-- Categories Widget -->
-            <div class="card mb-4">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0"><i class="fas fa-list me-2"></i> Categorias</h5>
-                </div>
+            <!-- Widget de Categorias -->
+            <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <div class="row">
+                    <h5 class="sidebar-title">Categorias</h5>
+                    <ul class="list-group list-group-flush">
                         {% for category in categories %}
-                        <div class="col-6 mb-2">
-                            <a href="{{ category.get_absolute_url }}" class="text-decoration-none d-flex justify-content-between align-items-center">
-                                <span>{{ category.name }}</span>
-                                <span class="badge rounded-pill" style="background-color: {{ category.color }};">{{ category.get_news_count }}</span>
+                        <li class="list-group-item d-flex justify-content-between align-items-center ps-0 pe-0 border-0">
+                            <a href="{{ category.get_absolute_url }}" class="category-link" style="border-left: 4px solid {{ category.color }};">
+                                {{ category.name }}
                             </a>
-                        </div>
-                        {% empty %}
-                        <div class="col-12">
-                            <p class="mb-0">Nenhuma categoria disponível.</p>
-                        </div>
+                            <span class="badge rounded-pill" style="background-color: {{ category.color }}">{{ category.get_news_count }}</span>
+                        </li>
                         {% endfor %}
-                    </div>
+                    </ul>
                 </div>
             </div>
             
-            <!-- Newsletter Widget -->
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-envelope me-2"></i> Newsletter</h5>
-                </div>
-                <div class="card-body">
-                    <p>Receba as últimas notícias diretamente no seu email.</p>
-                    <form id="sidebar-newsletter-form">
-                        <div class="mb-3">
-                            <input type="email" class="form-control" placeholder="Seu email" required name="email">
-                        </div>
-                        <button type="submit" class="btn btn-success w-100">Inscrever</button>
-                    </form>
-                </div>
-            </div>
-            
-            <!-- Parceiros Widget -->
+            <!-- Widget de Parceiros -->
             {% if partners %}
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="fas fa-user-md me-2"></i> Parceiros</h5>
-                </div>
+            <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <p class="mb-3">Conheça nossos parceiros e agende uma consulta.</p>
-                    
+                    <h5 class="sidebar-title">Parceiros</h5>
+                    <p class="text-muted small">Conheça nossos parceiros e agende uma consulta personalizada.</p>
                     <div class="row">
                         {% for partner in partners %}
-                        <div class="col-12 mb-3">
-                            <div class="card border-0 shadow-sm">
-                                <div class="row g-0">
-                                    <div class="col-4">
-                                        <img src="{{ partner.photo.url }}" class="img-fluid rounded-start" alt="{{ partner.name }}" style="height: 100%; object-fit: cover;">
-                                    </div>
-                                    <div class="col-8">
-                                        <div class="card-body py-2">
-                                            <h6 class="card-title mb-0">{{ partner.name }}</h6>
-                                            <p class="card-text small text-muted">{{ partner.title }}</p>
-                                            <a href="{% url 'news:partner_detail' partner.pk %}" class="btn btn-sm btn-info text-white">Agendar Consulta</a>
+                        <div class="col-6 mb-3">
+                            <div class="card partner-card border-0">
+                                <a href="{{ partner.get_absolute_url }}" class="text-decoration-none">
+                                    {% try %}
+                                        {% if partner.photo and partner.photo.name %}
+                                        <img src="{{ partner.photo.url }}" class="card-img-top partner-photo" alt="{{ partner.name }}">
+                                        {% else %}
+                                        <div class="bg-light text-center p-2">
+                                            <i class="fas fa-user-md fa-2x text-secondary"></i>
                                         </div>
+                                        {% endif %}
+                                    {% except %}
+                                        <div class="bg-light text-center p-2">
+                                            <i class="fas fa-exclamation-circle text-warning fa-2x"></i>
+                                        </div>
+                                    {% endtry %}
+                                    <div class="card-body p-2 text-center">
+                                        <h6 class="card-title mb-0 small">{{ partner.name }}</h6>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
-                    
-                    <a href="{% url 'news:partner_list' %}" class="btn btn-outline-info w-100 mt-2">Ver Todos os Parceiros</a>
+                    <a href="{% url 'news:partner_list' %}" class="btn btn-sm btn-outline-secondary w-100 mt-2">Ver todos os parceiros</a>
                 </div>
             </div>
             {% endif %}
+            
+            <!-- Widget de Notícias Populares -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="sidebar-title">Mais Populares</h5>
+                    {% for popular in trending_news %}
+                    <div class="media mb-3 pb-3 border-bottom">
+                        <div class="row">
+                            <div class="col-4">
+                                {% try %}
+                                    {% if popular.featured_image and popular.featured_image.name %}
+                                    <img src="{{ popular.featured_image.url }}" class="img-fluid rounded" alt="{{ popular.title }}">
+                                    {% else %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 60px;">
+                                        <i class="fas fa-image text-secondary"></i>
+                                    </div>
+                                    {% endif %}
+                                {% except %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 60px;">
+                                        <i class="fas fa-exclamation-circle text-warning"></i>
+                                    </div>
+                                {% endtry %}
+                            </div>
+                            <div class="col-8 ps-0">
+                                <h6 class="mt-0 mb-1">
+                                    <a href="{{ popular.get_absolute_url }}" class="text-decoration-none">{{ popular.title|truncatechars:50 }}</a>
+                                </h6>
+                                <div class="small text-muted">
+                                    <i class="fas fa-eye me-1"></i> {{ popular.hit_count.hits }} visualizações
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>

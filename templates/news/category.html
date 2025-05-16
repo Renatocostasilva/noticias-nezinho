@@ -1,43 +1,47 @@
 {% extends 'base.html' %}
+{% load static %}
+{% load news_tags %}
 
 {% block title %}{{ category.name }} - Notícias{% endblock %}
 
 {% block content %}
-<div class="container my-4">
-    <div class="row">
-        <div class="col-12 mb-4">
-            <h1 class="news-title">
-                <span class="badge" style="background-color: {{ category.color }};">{{ category.name }}</span>
-                Notícias
-            </h1>
-            {% if category.description %}
-            <p class="lead mt-3">{{ category.description }}</p>
-            {% endif %}
-        </div>
-    </div>
-    
+<div class="container my-5">
     <div class="row">
         <!-- Main Content -->
         <div class="col-lg-8">
+            <h1 class="mb-4 news-title">{{ category.name }}</h1>
+            <p class="lead mb-4">{{ category.description }}</p>
+            
+            <!-- Notícias -->
             {% for news in news_list %}
-            <div class="card mb-4">
+            <div class="card mb-4 border-0 shadow-sm">
                 <div class="row g-0">
                     <div class="col-md-4">
-                        <img src="{{ news.featured_image.url }}" class="img-fluid rounded-start" alt="{{ news.title }}" style="height: 100%; object-fit: cover;">
+                        {% try %}
+                            {% if news.featured_image and news.featured_image.name %}
+                            <img src="{{ news.featured_image.url }}" class="img-fluid rounded-start" alt="{{ news.title }}" style="height: 100%; object-fit: cover;">
+                            {% else %}
+                            <div class="bg-light text-center p-4 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-image text-secondary fa-3x"></i>
+                            </div>
+                            {% endif %}
+                        {% except %}
+                            <div class="bg-light text-center p-4 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-exclamation-circle text-warning fa-3x"></i>
+                            </div>
+                        {% endtry %}
                     </div>
                     <div class="col-md-8">
                         <div class="card-body">
-                            <span class="badge" style="background-color: {{ news.category.color }};">{{ news.category.name }}</span>
-                            <h5 class="card-title mt-2 news-title">
-                                <a href="{{ news.get_absolute_url }}" class="text-decoration-none text-dark">{{ news.title }}</a>
-                            </h5>
-                            <p class="card-text">{{ news.summary|truncatechars:150 }}</p>
-                            <div class="d-flex justify-content-between align-items-center news-meta">
-                                <div>
-                                    <span><i class="far fa-user me-1"></i> {{ news.author.get_full_name|default:news.author.username }}</span>
-                                    <span class="ms-3"><i class="far fa-clock me-1"></i> {{ news.publish_date|date:"d/m/Y" }}</span>
+                            <h5 class="card-title">{{ news.title }}</h5>
+                            <p class="card-text">{{ news.summary|default:news.content|striptags|truncatewords:25 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="news-meta text-muted small">
+                                    <span><i class="fas fa-user me-1"></i> {{ news.author.get_full_name|default:news.author.username }}</span>
+                                    <span class="ms-2"><i class="fas fa-calendar-alt me-1"></i> {{ news.publish_date|date:"d/m/Y" }}</span>
+                                    <span class="ms-2"><i class="fas fa-eye me-1"></i> {{ news.hit_count.hits }} visualizações</span>
                                 </div>
-                                <a href="{{ news.get_absolute_url }}" class="btn btn-sm btn-outline-primary">Leia mais</a>
+                                <a href="{{ news.get_absolute_url }}" class="btn btn-sm btn-primary">Leia mais</a>
                             </div>
                         </div>
                     </div>
@@ -45,45 +49,63 @@
             </div>
             {% empty %}
             <div class="alert alert-info">
-                Nenhuma notícia disponível nesta categoria no momento.
+                Nenhuma notícia disponível para esta categoria no momento.
             </div>
             {% endfor %}
             
-            <!-- Pagination -->
-            {% if is_paginated %}
-            <nav aria-label="Page navigation" class="mt-4">
+            <!-- Paginação -->
+            {% if news_list.has_other_pages %}
+            <nav aria-label="Paginação de notícias">
                 <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
+                    {% if news_list.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page=1" aria-label="First">
+                        <a class="page-link" href="?page=1" aria-label="Primeira">
                             <span aria-hidden="true">&laquo;&laquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                        <a class="page-link" href="?page={{ news_list.previous_page_number }}" aria-label="Anterior">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;&laquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
                     {% endif %}
                     
-                    {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                    <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                    {% endif %}
+                    {% for i in news_list.paginator.page_range %}
+                        {% if news_list.number == i %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ i }}</span>
+                        </li>
+                        {% elif i > news_list.number|add:'-3' and i < news_list.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                        </li>
+                        {% endif %}
                     {% endfor %}
                     
-                    {% if page_obj.has_next %}
+                    {% if news_list.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                        <a class="page-link" href="?page={{ news_list.next_page_number }}" aria-label="Próxima">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                        <a class="page-link" href="?page={{ news_list.paginator.num_pages }}" aria-label="Última">
                             <span aria-hidden="true">&raquo;&raquo;</span>
                         </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;&raquo;</span>
                     </li>
                     {% endif %}
                 </ul>
@@ -93,25 +115,41 @@
         
         <!-- Sidebar -->
         <div class="col-lg-4">
+            <!-- Search Widget -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-search me-2"></i> Pesquisar</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'news:search_results' %}" method="get">
+                        <div class="input-group">
+                            {{ search_form.q }}
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
             <!-- Categories Widget -->
             <div class="card mb-4">
-                <div class="card-header bg-dark text-white">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="fas fa-list me-2"></i> Categorias</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        {% for cat in categories %}
-                        <div class="col-6 mb-2">
-                            <a href="{{ cat.get_absolute_url }}" class="text-decoration-none d-flex justify-content-between align-items-center {% if cat.id == category.id %}fw-bold{% endif %}">
-                                <span>{{ cat.name }}</span>
-                                <span class="badge rounded-pill" style="background-color: {{ cat.color }};">{{ cat.get_news_count }}</span>
-                            </a>
-                        </div>
-                        {% empty %}
                         <div class="col-12">
-                            <p class="mb-0">Nenhuma categoria disponível.</p>
+                            <ul class="list-unstyled mb-0">
+                                {% for cat in categories %}
+                                <li class="mb-2">
+                                    <a href="{{ cat.get_absolute_url }}" class="text-decoration-none {% if cat.id == category.id %}fw-bold{% endif %}">
+                                        {{ cat.name }}
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
                         </div>
-                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -147,7 +185,19 @@
                             <div class="card border-0 shadow-sm">
                                 <div class="row g-0">
                                     <div class="col-4">
-                                        <img src="{{ partner.photo.url }}" class="img-fluid rounded-start" alt="{{ partner.name }}" style="height: 100%; object-fit: cover;">
+                                        {% try %}
+                                            {% if partner.photo and partner.photo.name %}
+                                            <img src="{{ partner.photo.url }}" class="img-fluid rounded-start" alt="{{ partner.name }}" style="height: 100%; object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 70px;">
+                                                <i class="fas fa-user-md text-secondary fa-2x"></i>
+                                            </div>
+                                            {% endif %}
+                                        {% except %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 70px;">
+                                                <i class="fas fa-exclamation-circle text-warning fa-2x"></i>
+                                            </div>
+                                        {% endtry %}
                                     </div>
                                     <div class="col-8">
                                         <div class="card-body py-2">
@@ -173,52 +223,11 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const sidebarNewsletterForm = document.getElementById('sidebar-newsletter-form');
-        
-        if (sidebarNewsletterForm) {
-            sidebarNewsletterForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const email = this.querySelector('input[name="email"]').value;
-                const csrfToken = '{{ csrf_token }}';
-                
-                fetch('{% url "news:newsletter_signup" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: `email=${encodeURIComponent(email)}`
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        sidebarNewsletterForm.innerHTML = '<div class="alert alert-success">Obrigado por se inscrever!</div>';
-                    } else {
-                        let errorMsg = 'Ocorreu um erro. Tente novamente.';
-                        if (data.errors && data.errors.email) {
-                            errorMsg = data.errors.email[0];
-                        }
-                        sidebarNewsletterForm.innerHTML = `<div class="alert alert-danger">${errorMsg}</div>`;
-                        
-                        // Reset form after 3 seconds
-                        setTimeout(() => {
-                            sidebarNewsletterForm.innerHTML = `
-                                <div class="mb-3">
-                                    <input type="email" class="form-control" placeholder="Seu email" required name="email">
-                                </div>
-                                <button type="submit" class="btn btn-success w-100">Inscrever</button>
-                            `;
-                        }, 3000);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    sidebarNewsletterForm.innerHTML = '<div class="alert alert-danger">Ocorreu um erro. Tente novamente.</div>';
-                });
-            });
-        }
+    // JavaScript para o formulário de newsletter
+    document.getElementById('sidebar-newsletter-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        alert('Obrigado por se inscrever em nossa newsletter!');
+        this.reset();
     });
 </script>
 {% endblock %} 

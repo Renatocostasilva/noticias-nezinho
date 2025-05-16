@@ -19,7 +19,7 @@ class AdForm(forms.ModelForm):
         fields = ['title', 'description', 'name', 'email', 'phone', 'highlight']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'rows': 3, 'maxlength': 200, 'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 5, 'maxlength': 10000, 'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),

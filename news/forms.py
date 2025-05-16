@@ -19,26 +19,15 @@ class NewsForm(forms.ModelForm):
         })
     )
     
-    # Tornar o campo slug opcional
-    slug = forms.SlugField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Digite o slug (opcional)'
-        }),
-        help_text='Nome amigável para URL. Deixe em branco para gerar automaticamente a partir do título.'
-    )
-    
     class Meta:
         model = News
         fields = [
-            'title', 'slug', 'category', 'featured_image', 'content', 
+            'title', 'category', 'featured_image', 'content', 
             'summary', 'tags', 'status', 'is_featured', 
             'is_slider', 'is_trending', 'publish_date'
         ]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Digite o título'}),
-            'slug': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Digite o slug (opcional)'}),
             'category': forms.Select(attrs={'class': 'form-select'}),
             'summary': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Digite um breve resumo (opcional)'}),
             'tags': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Digite as tags separadas por vírgulas'}),
@@ -49,7 +38,6 @@ class NewsForm(forms.ModelForm):
             'is_trending': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         help_texts = {
-            'slug': _('Nome amigável para URL. Deixe em branco para gerar automaticamente a partir do título.'),
             'tags': _('Digite as tags separadas por vírgulas.'),
             'is_featured': _('Notícias em destaque aparecem na página inicial.'),
             'is_slider': _('Notícias do slider aparecem no slider principal.'),
@@ -57,7 +45,6 @@ class NewsForm(forms.ModelForm):
         }
         labels = {
             'title': _('Título'),
-            'slug': _('Slug'),
             'category': _('Categoria'),
             'featured_image': _('Imagem Destacada'),
             'content': _('Conteúdo'),

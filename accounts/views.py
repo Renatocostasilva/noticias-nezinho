@@ -41,6 +41,13 @@ class CustomLoginView(LoginView):
 class CustomLogoutView(LogoutView):
     """Custom logout view."""
     next_page = reverse_lazy('news:home')
+    
+    def dispatch(self, request, *args, **kwargs):
+        """Aceitar requisições GET e POST para logout."""
+        if request.method == 'GET':
+            # Para requisições GET, mostramos uma página de confirmação
+            return render(request, 'accounts/logout_confirm.html')
+        return super().dispatch(request, *args, **kwargs)
 
 class CustomPasswordChangeView(PasswordChangeView):
     """Custom password change view."""

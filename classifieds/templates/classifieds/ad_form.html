@@ -28,9 +28,9 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">Descrição (máximo 200 caracteres)</label>
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Descrição (máximo 10000 caracteres)</label>
                             {{ form.description }}
-                            <div class="form-text" id="char-count">0/200 caracteres</div>
+                            <div class="form-text" id="char-count">0/10000 caracteres</div>
                         </div>
                         
                         <div class="mb-3">
@@ -79,9 +79,9 @@
         
         function updateCharCount() {
             const currentLength = descriptionField.value.length;
-            charCount.textContent = `${currentLength}/200 caracteres`;
+            charCount.textContent = `${currentLength}/10000 caracteres`;
             
-            if (currentLength > 200) {
+            if (currentLength > 10000) {
                 charCount.classList.add('text-danger');
             } else {
                 charCount.classList.remove('text-danger');

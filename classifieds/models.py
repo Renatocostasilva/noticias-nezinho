@@ -21,7 +21,7 @@ class Ad(models.Model):
     )
     
     title = models.CharField('Título', max_length=100)
-    description = models.CharField('Descrição', max_length=200)
+    description = models.TextField('Descrição', max_length=10000)
     photos = models.ManyToManyField(Photo, blank=True)
     
     # Dados pessoais (confidenciais)

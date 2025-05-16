@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, News, Comment, Newsletter
+from .models import Category, News, Comment, Newsletter, SiteConfiguration
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -58,4 +58,24 @@ class NewsletterAdmin(admin.ModelAdmin):
     
     def deactivate_subscriptions(self, request, queryset):
         queryset.update(active=False)
-    deactivate_subscriptions.short_description = "Deactivate selected subscriptions" 
+    deactivate_subscriptions.short_description = "Deactivate selected subscriptions"
+
+@admin.register(SiteConfiguration)
+class SiteConfigurationAdmin(admin.ModelAdmin):
+    list_display = ['site_name', 'updated_at']
+    fieldsets = (
+        ('Informações do Site', {
+            'fields': ('site_name', 'site_logo')
+        }),
+        ('Rodapé', {
+            'fields': ('footer_text',)
+        }),
+    )
+
+    def has_add_permission(self, request):
+        # Impede que novos registros sejam criados se já existir um
+        return not SiteConfiguration.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        # Impede que o registro único seja excluído
+        return False 

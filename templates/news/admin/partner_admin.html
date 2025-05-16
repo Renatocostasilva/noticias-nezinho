@@ -1,52 +1,39 @@
-{% extends 'base.html' %}
+{% extends 'news/admin/base_admin.html' %}
+{% load news_tags %}
 
-{% block title %}Administração de Parceiros - Notícias{% endblock %}
+{% block title %}Administração de Parceiros - Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid my-4">
+<div class="container-fluid py-4">
     <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-3">
-            <div class="card shadow mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Painel de Administração</h5>
-                </div>
-                <div class="list-group list-group-flush">
-                    <a href="{% url 'news:news_admin' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
-                    </a>
-                    <a href="{% url 'news:news_create' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-plus me-2"></i> Nova Notícia
-                    </a>
-                    <a href="{% url 'news:partner_admin' %}" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-user-md me-2"></i> Parceiros
-                    </a>
-                    <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-user me-2"></i> Meu Perfil
-                    </a>
-                    <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-key me-2"></i> Alterar Senha
-                    </a>
-                    <a href="{% url 'accounts:logout' %}" class="list-group-item list-group-item-action text-danger">
-                        <i class="fas fa-sign-out-alt me-2"></i> Sair
-                    </a>
-                </div>
+        <div class="col-12 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">Administração de Parceiros</h1>
+                <a href="{% url 'news:partner_create' %}" class="btn btn-success">
+                    <i class="fas fa-plus me-1"></i> Novo Parceiro
+                </a>
             </div>
         </div>
         
-        <!-- Main Content -->
-        <div class="col-md-9">
-            <!-- Parceiros -->
-            <div class="card shadow mb-4">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Parceiros</h5>
-                    <a href="{% url 'news:partner_create' %}" class="btn btn-sm btn-light">
-                        <i class="fas fa-plus me-1"></i> Novo Parceiro
-                    </a>
                 </div>
                 <div class="card-body">
+                    {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-striped table-hover">
                             <thead>
                                 <tr>
                                     <th>Foto</th>
@@ -61,7 +48,19 @@
                                 {% for partner in partners %}
                                 <tr>
                                     <td>
-                                        <img src="{{ partner.photo.url }}" alt="{{ partner.name }}" class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% try %}
+                                            {% if partner.photo and partner.photo.name %}
+                                            <img src="{{ partner.photo.url }}" alt="{{ partner.name }}" class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                <i class="fas fa-user-md text-secondary"></i>
+                                            </div>
+                                            {% endif %}
+                                        {% except %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                <i class="fas fa-exclamation-circle text-warning"></i>
+                                            </div>
+                                        {% endtry %}
                                     </td>
                                     <td>{{ partner.name }}</td>
                                     <td>{{ partner.title }}</td>
@@ -94,48 +93,115 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Solicitações de Consulta -->
+        </div>
+        
+        <div class="col-12">
             <div class="card shadow">
-                <div class="card-header bg-info text-white">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Solicitações de Consulta</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-striped table-hover">
                             <thead>
                                 <tr>
                                     <th>Data</th>
-                                    <th>Nome</th>
                                     <th>Parceiro</th>
+                                    <th>Nome do Cliente</th>
+                                    <th>Telefone</th>
+                                    <th>Email</th>
                                     <th>Status</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for consultation in consultation_requests %}
+                                {% for request in consultation_requests %}
                                 <tr>
-                                    <td>{{ consultation.created_date|date:"d/m/Y H:i" }}</td>
-                                    <td>{{ consultation.full_name }}</td>
-                                    <td>{{ consultation.partner.name }}</td>
+                                    <td>{{ request.created_date|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ request.partner.name }}</td>
+                                    <td>{{ request.full_name }}</td>
+                                    <td>{{ request.phone }}</td>
+                                    <td>{{ request.email }}</td>
                                     <td>
-                                        {% if consultation.status == 'pending' %}
-                                        <span class="badge bg-warning text-dark">Pendente</span>
-                                        {% elif consultation.status == 'confirmed' %}
-                                        <span class="badge bg-success">Confirmada</span>
-                                        {% else %}
-                                        <span class="badge bg-danger">Cancelada</span>
+                                        {% if request.status == 'pending' %}
+                                        <span class="badge bg-warning">Pendente</span>
+                                        {% elif request.status == 'approved' %}
+                                        <span class="badge bg-success">Aprovado</span>
+                                        {% elif request.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejeitado</span>
+                                        {% elif request.status == 'completed' %}
+                                        <span class="badge bg-info">Concluído</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'news:consultation_detail' consultation.id %}" class="btn btn-sm btn-outline-info">
-                                            <i class="fas fa-eye"></i> Detalhes
-                                        </a>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#requestModal{{ request.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                        
+                                        <!-- Modal para visualizar detalhes -->
+                                        <div class="modal fade" id="requestModal{{ request.id }}" tabindex="-1" aria-labelledby="requestModalLabel{{ request.id }}" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="requestModalLabel{{ request.id }}">Detalhes da Solicitação</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <p><strong>Nome:</strong> {{ request.full_name }}</p>
+                                                                <p><strong>Email:</strong> {{ request.email }}</p>
+                                                                <p><strong>Telefone:</strong> {{ request.phone }}</p>
+                                                                <p><strong>CPF:</strong> {{ request.cpf }}</p>
+                                                                <p><strong>Endereço:</strong> {{ request.address }}</p>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <p><strong>Parceiro:</strong> {{ request.partner.name }}</p>
+                                                                <p><strong>Data da Solicitação:</strong> {{ request.created_date|date:"d/m/Y H:i" }}</p>
+                                                                <p><strong>Dias Preferidos:</strong> {{ request.preferred_days }}</p>
+                                                                <p><strong>Horários Preferidos:</strong> {{ request.preferred_times }}</p>
+                                                                <p><strong>Forma de Pagamento:</strong> {{ request.payment_method }}</p>
+                                                            </div>
+                                                            <div class="col-12 mt-3">
+                                                                <h6>Observações:</h6>
+                                                                <p>{{ request.notes|default:"Nenhuma observação." }}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <form action="{% url 'news:update_consultation_status' request.id %}" method="post" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="status" value="approved">
+                                                            <button type="submit" class="btn btn-success {% if request.status == 'approved' %}disabled{% endif %}">
+                                                                <i class="fas fa-check me-1"></i> Aprovar
+                                                            </button>
+                                                        </form>
+                                                        <form action="{% url 'news:update_consultation_status' request.id %}" method="post" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="status" value="rejected">
+                                                            <button type="submit" class="btn btn-danger {% if request.status == 'rejected' %}disabled{% endif %}">
+                                                                <i class="fas fa-times me-1"></i> Rejeitar
+                                                            </button>
+                                                        </form>
+                                                        <form action="{% url 'news:update_consultation_status' request.id %}" method="post" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="status" value="completed">
+                                                            <button type="submit" class="btn btn-info {% if request.status == 'completed' %}disabled{% endif %}">
+                                                                <i class="fas fa-check-double me-1"></i> Marcar como Concluído
+                                                            </button>
+                                                        </form>
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center">Nenhuma solicitação de consulta recebida.</td>
+                                    <td colspan="7" class="text-center">Nenhuma solicitação de consulta no momento.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

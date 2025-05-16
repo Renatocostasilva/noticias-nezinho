@@ -1,22 +1,32 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse_lazy, reverse
 from django.db.models import Count, Q, Sum
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
+from django.utils.decorators import method_decorator
 from django.contrib import messages
 from hitcount.views import HitCountDetailView
 import feedparser
 from datetime import datetime, timedelta
 import time
-from .models import News, Category, Comment, Newsletter, Partner, ConsultationRequest, RSSFeed
+from .models import News, Category, Comment, Newsletter, Partner, ConsultationRequest, RSSFeed, SiteConfiguration
 from .forms import NewsForm, CommentForm, NewsletterForm, SearchForm, PartnerForm, ConsultationRequestForm, RSSFeedForm
 from classifieds.models import Ad  # Importar o modelo de anúncios
 import random
 from django.core.cache import cache
+from django import forms
+
+def clear_news_cache():
+    """Função auxiliar para limpar o cache de notícias."""
+    cache.clear()  # Limpa todo o cache
+    # Se quiser ser mais seletivo:
+    # cache.delete('rss_feeds_cache')
+    # cache.delete_many(['lista_de_chaves_para_excluir'])
 
 class HomeView(ListView):
     """View for the homepage."""
@@ -257,88 +267,62 @@ def newsletter_signup(request):
     return JsonResponse({'success': False, 'errors': form.errors})
 
 # Admin views for news management
+@method_decorator(never_cache, name='dispatch')
 class NewsCreateView(LoginRequiredMixin, CreateView):
     """View for creating news articles."""
     model = News
     form_class = NewsForm
     template_name = 'news/admin/news_form.html'
+    success_url = reverse_lazy('news:admin_dashboard')
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.object = None
     
-    def get(self, request, *args, **kwargs):
-        self.object = None
-        return super().get(request, *args, **kwargs)
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        response = super().form_valid(form)
+        # Limpar o cache após criar uma notícia
+        clear_news_cache()
+        messages.success(self.request, 'Notícia criada com sucesso!')
+        return response
     
     def post(self, request, *args, **kwargs):
-        self.object = None  # Inicializa self.object como None para evitar erro
+        # Log para depuração
+        if 'featured_image' in request.FILES:
+            image = request.FILES['featured_image']
+            print("--- DEBUG UPLOAD DE IMAGEM ---")
+            print(f"Nome do arquivo: {image.name}")
+            print(f"Tamanho: {image.size} bytes")
+            print(f"Tipo de conteúdo: {image.content_type}")
+        else:
+            print("Nenhuma imagem enviada no formulário")
+        
+        # Continua com o processamento normal do formulário
         form = self.get_form()
-        try:
-            # Log para depuração
-            print("\n\n--- DEBUG UPLOAD DE IMAGEM ---")
-            if 'featured_image' in request.FILES:
-                img = request.FILES['featured_image']
-                print(f"Nome do arquivo: {img.name}")
-                print(f"Tamanho: {img.size} bytes")
-                print(f"Tipo de conteúdo: {img.content_type}")
-            else:
-                print("Nenhum arquivo enviado no campo 'featured_image'")
-                
-            if form.is_valid():
-                return self.form_valid(form)
-            else:
-                print(f"Erros de validação do formulário: {form.errors}")
-                return self.form_invalid(form)
-        except Exception as e:
-            import traceback
-            print(f"ERRO NO UPLOAD: {str(e)}")
-            print(traceback.format_exc())
-            messages.error(request, f"Erro ao criar notícia: {str(e)}")
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
             return self.form_invalid(form)
-    
-    def form_valid(self, form):
-        try:
-            form.instance.author = self.request.user
-            response = super().form_valid(form)
-            # Verificamos se a imagem foi salva corretamente
-            if form.instance.featured_image:
-                # Registramos o caminho completo da imagem para debug
-                import os
-                from django.conf import settings
-                full_path = os.path.join(settings.MEDIA_ROOT, str(form.instance.featured_image))
-                print(f"Imagem salva em: {full_path}")
-                
-                # Garantimos que o arquivo existe
-                if not os.path.exists(full_path):
-                    print(f"ERRO: O arquivo não existe em {full_path}")
-                else:
-                    print(f"SUCESSO: Imagem salva corretamente em {full_path}")
-                    
-            messages.success(self.request, 'Notícia criada com sucesso!')
-            return response
-        except Exception as e:
-            import traceback
-            print(f"ERRO AO SALVAR: {str(e)}")
-            print(traceback.format_exc())
-            messages.error(self.request, f"Erro ao salvar notícia: {str(e)}")
-            return self.render_to_response(self.get_context_data(form=form))
-    
-    def form_invalid(self, form):
-        # Debug para verificar os erros de validação do formulário
-        print(f"Erros no formulário: {form.errors}")
-        messages.error(self.request, 'Erro ao criar notícia. Por favor, verifique os campos.')
-        return super().form_invalid(form)
 
+@method_decorator(never_cache, name='dispatch')
 class NewsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """View for updating news articles."""
     model = News
     form_class = NewsForm
     template_name = 'news/admin/news_form.html'
+    success_url = reverse_lazy('news:admin_dashboard')
     
     def test_func(self):
         news = self.get_object()
         return self.request.user == news.author or self.request.user.is_staff
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        # Limpar o cache após atualizar uma notícia
+        clear_news_cache()
+        messages.success(self.request, 'Notícia atualizada com sucesso!')
+        return response
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -350,6 +334,14 @@ class NewsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         self.object = self.get_object()  # Importante definir o objeto atual
         form = self.get_form()
         
+        # Log para depuração
+        if 'featured_image' in request.FILES:
+            image = request.FILES['featured_image']
+            print("--- DEBUG UPLOAD DE IMAGEM (EDIÇÃO) ---")
+            print(f"Nome do arquivo: {image.name}")
+            print(f"Tamanho: {image.size} bytes")
+            print(f"Tipo de conteúdo: {image.content_type}")
+        
         # Verifica se uma nova imagem foi fornecida
         if not request.FILES.get('featured_image') and self.object.featured_image:
             # Se não houver nova imagem e já existir uma, mantenha a imagem atual
@@ -357,16 +349,13 @@ class NewsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             # Remova erros de validação relacionados à imagem
             if 'featured_image' in form.errors:
                 del form.errors['featured_image']
-                
-        # Verifica se o formulário é válido
+        
         if form.is_valid():
-            form.instance.author = self.request.user
-            messages.success(self.request, 'Notícia atualizada com sucesso!')
-            return super().form_valid(form)
+            return self.form_valid(form)
         else:
-            print(f"Erros de validação do formulário: {form.errors}")
             return self.form_invalid(form)
 
+@method_decorator(never_cache, name='dispatch')
 class NewsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """View for deleting news articles."""
     model = News
@@ -376,31 +365,91 @@ class NewsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         news = self.get_object()
         return self.request.user == news.author or self.request.user.is_staff
+    
+    def delete(self, request, *args, **kwargs):
+        """Sobrescrever o método delete para limpar o cache quando uma notícia é excluída."""
+        try:
+            # Obter o objeto antes de excluí-lo
+            self.object = self.get_object()
+            
+            # Identificador para mensagem de log
+            news_id = self.object.id
+            news_title = self.object.title
+            
+            # Chamar o método delete original para excluir o objeto
+            response = super().delete(request, *args, **kwargs)
+            
+            # Limpar o cache
+            clear_news_cache()
+            
+            # Log para depuração
+            print(f"Notícia excluída com sucesso: ID={news_id}, Título={news_title}")
+            
+            # Adicionar mensagem de sucesso
+            messages.success(request, 'Notícia excluída com sucesso!')
+            
+            # Redirecionar para o dashboard com parâmetro de timestamp para evitar cache
+            timestamp = datetime.now().timestamp()
+            return redirect(f"{self.success_url}?t={timestamp}")
+            
+        except Exception as e:
+            # Log detalhado do erro
+            print(f"Erro ao excluir notícia: {str(e)}")
+            messages.error(request, f"Erro ao excluir notícia: {str(e)}")
+            return redirect('news:admin_dashboard')
 
+@never_cache
 @login_required
 def admin_dashboard(request):
     """View for the admin dashboard."""
+    # Forçar atualização do cache
+    clear_news_cache()
+    
+    # Buscar notícias atualizadas diretamente do banco de dados
     user_news = News.objects.filter(author=request.user).order_by('-created_date')
+    
+    # Contar parceiros e anúncios para o menu lateral
+    total_partners = Partner.objects.count()
+    total_ads = Ad.objects.count()
     
     context = {
         'published_count': user_news.filter(status='published').count(),
         'draft_count': user_news.filter(status='draft').count(),
         'recent_news': user_news[:10],
         'categories': Category.objects.annotate(news_count=Count('news')),
+        'total_partners': total_partners,
+        'total_ads': total_ads,
+        'total_news': News.objects.count(),
+        # Adicionar um timestamp para evitar o caching do navegador
+        'timestamp': datetime.now().timestamp(),
     }
     
     return render(request, 'news/admin/dashboard.html', context)
 
+@never_cache
 @login_required
 def news_admin(request):
     """Alternative view for the admin dashboard."""
+    # Forçar atualização do cache
+    clear_news_cache()
+    
+    # Buscar notícias atualizadas diretamente do banco de dados
     user_news = News.objects.filter(author=request.user).order_by('-created_date')
+    
+    # Contar parceiros e anúncios para o menu lateral
+    total_partners = Partner.objects.count()
+    total_ads = Ad.objects.count()
     
     context = {
         'published_count': user_news.filter(status='published').count(),
         'draft_count': user_news.filter(status='draft').count(),
         'recent_news': user_news[:10],
         'categories': Category.objects.annotate(news_count=Count('news')),
+        'total_partners': total_partners,
+        'total_ads': total_ads,
+        'total_news': News.objects.count(),
+        # Adicionar um timestamp para evitar o caching do navegador
+        'timestamp': datetime.now().timestamp(),
     }
     
     return render(request, 'news/admin/dashboard.html', context)
@@ -639,4 +688,34 @@ def refresh_all_rss_feeds(request):
     result = atualizar_feeds_rss.delay()
     
     messages.success(request, 'Todos os feeds RSS estão sendo atualizados em segundo plano.')
-    return redirect('news:rss_feed_list') 
+    return redirect('news:rss_feed_list')
+
+class SiteConfigForm(forms.ModelForm):
+    class Meta:
+        model = SiteConfiguration
+        fields = ['site_name', 'site_logo', 'footer_text']
+        widgets = {
+            'footer_text': forms.Textarea(attrs={'rows': 3}),
+        }
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+@never_cache
+def site_config_edit(request):
+    """
+    View para editar as configurações do site, incluindo a logo.
+    """
+    config = SiteConfiguration.get_solo()
+    form = SiteConfigForm(instance=config)
+    
+    if request.method == 'POST':
+        form = SiteConfigForm(request.POST, request.FILES, instance=config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Configurações do site atualizadas com sucesso.")
+            return redirect('news:site_config_edit')
+    
+    return render(request, 'news/admin/site_config_form.html', {
+        'form': form,
+        'config': config,
+    }) 
